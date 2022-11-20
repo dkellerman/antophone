@@ -19,6 +19,7 @@ CONTINUOUS_LAYOUT = (
     ('C5', 'C#5', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5'),
 )
 
+
 class Instrument:
     size = (600, 200)
     volumes = np.zeros(size, np.float32)
@@ -49,4 +50,3 @@ class Instrument:
 
     def update(self):
         pass
-
