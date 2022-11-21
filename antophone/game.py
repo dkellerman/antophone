@@ -12,11 +12,13 @@ class Game:
     instr = None
     base_square_size = Ant.size
     zoom = 1
-    initial_ant_count = 1
+    initial_ant_count = 0
     frame_rate = 60
     bg_color = (0, 0, 0)
     delay = .1
-    instr_copies = 3
+    instr_copies = 4
+    user_impact = .5
+    dragging = False
 
     @property
     def square_size(self):
@@ -89,6 +91,14 @@ class Game:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self.running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            t = int(time.time())
+            self.dragging = t
+            self.touch(event.pos, t)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.dragging = False
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            self.touch(event.pos, int(time.time()))
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 if event.mod & pygame.KMOD_SHIFT:
@@ -103,6 +113,18 @@ class Game:
                 else:
                     self.zoom = min(self.zoom + 1, 5)
                 self.render_surface()
+
+    def touch(self, pos, t):
+        if not self.dragging:
+            impact = self.user_impact
+        else:
+            dt = t - self.dragging
+            x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
+            impact = self.user_impact / (4**dt)
+            if impact < .01:
+                self.dragging = False
+                return
+        self.instr.adjust_freq(x, y, impact)
 
     def render_surface(self):
         sqw, sqh = self.square_size
