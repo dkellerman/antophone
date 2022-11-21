@@ -1,3 +1,3 @@
-from .ant import *
-from .instrument import *
-from .game import *
+from .ant import Ant
+from .instrument import Instrument
+from .game import Game

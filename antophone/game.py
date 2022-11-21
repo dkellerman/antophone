@@ -1,11 +1,12 @@
-import sys
+import numpy as np
 import time
 import threading
 import pygame
 import pyo
+from librosa import midi_to_hz
 from functools import cache
 from colorsys import hls_to_rgb
-from antophone import Instrument, Ant
+from antophone import Instrument, Ant, mic, midi
 
 
 class Game:
@@ -45,6 +46,11 @@ class Game:
         self.engine_thread = threading.Thread(target=self.run_engine)
         self.engine_thread.start()
 
+        # midi thread
+        midi_cb = lambda *args: self.handle_midi_note(*args)
+        self.midi_thread = threading.Thread(target=midi.listen, args=[midi_cb])
+        self.midi_thread.start()
+
         # gui thread
         while self.running:
             for event in pygame.event.get():
@@ -52,15 +58,16 @@ class Game:
             self.render()
             pygame.display.update()
             self.clock.tick(self.frame_rate)
-        self.quit()
 
     def quit(self):
+        print('quitting...')
         self.running = False
         self.engine_running = False
+        mic.stop()
+        midi.stop()
         self.instr.stop()
         self.audio_server.shutdown()
         pygame.quit()
-        sys.exit()
 
     def run_engine(self):
         self.engine_running = True
@@ -73,6 +80,7 @@ class Game:
     def render(self):
         sqw, sqh = self.square_size
         self.surface.fill(self.bg_color)
+        pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
 
         for y in range(self.instr.height):
             for x in range(self.instr.width):
@@ -105,6 +113,15 @@ class Game:
                     self.instr.remove_random_ants(1)
                 else:
                     self.instr.add_random_ants(1)
+            elif event.key == pygame.K_m:
+                if mic.running:
+                    print('stopping mic')
+                    mic.stop()
+                else:
+                    print('starting mic')
+                    cb = lambda *args: self.handle_audio_pitch(*args)
+                    self.mic_thread = threading.Thread(target=mic.listen, args=[cb])
+                    self.mic_thread.start()
             elif event.key == pygame.K_c:
                 self.instr.ants = []
             elif event.key == pygame.K_z:
@@ -114,12 +131,27 @@ class Game:
                     self.zoom = min(self.zoom + 1, 5)
                 self.render_surface()
 
-    def touch(self, pos, t):
+    def handle_midi_note(self, note):
+        hz = midi_to_hz(note.note)
+        vol = min(max(note.velocity / 127, 0), self.user_impact)
+        hits = np.where(self.instr.freqs == hz)
+        print("[MIDI]", hz, vol, 'hits:', len(hits[0]))
+        for y, x in zip(*hits):
+            self.instr.adjust_freq(x, y, vol)
+
+    def handle_audio_pitch(self, pitch, confidence):
+        print('[P]', pitch, confidence)
+        for y, row in enumerate(self.instr.freqs):
+            for x, freq in enumerate(row):
+                if freq >= pitch - 5 and freq <= pitch + 5:
+                    self.instr.adjust_freq(x, y, self.user_impact)
+
+    def touch(self, pos, t=None):
+        x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
         if not self.dragging:
             impact = self.user_impact
         else:
             dt = t - self.dragging
-            x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
             impact = self.user_impact / (4**dt)
             if impact < .01:
                 self.dragging = False

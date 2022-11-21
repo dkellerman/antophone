@@ -29,6 +29,17 @@ six = "*"
 test = ["astroid (<=2.5.3)", "pytest"]
 
 [[package]]
+name = "aubio"
+version = "0.4.9"
+description = "a collection of tools for music analysis"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "audioread"
 version = "3.0.0"
 description = "multi-library, cross-platform audio decoding"
@@ -225,6 +236,18 @@ python-versions = ">=3.5"
 traitlets = "*"
 
 [[package]]
+name = "mido"
+version = "1.2.10"
+description = "MIDI Objects for Python"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+dev = ["check-manifest (>=0.35)", "flake8 (>=3.4.1)", "pytest (>=3.2.2)", "sphinx (>=1.6.3)", "tox (>=2.8.2)"]
+ports = ["python-rtmidi (>=1.1.0)"]
+
+[[package]]
 name = "numba"
 version = "0.56.4"
 description = "compiling Python code using LLVM"
@@ -341,6 +364,17 @@ python-versions = "*"
 
 [package.extras]
 tests = ["pytest"]
+
+[[package]]
+name = "pyaudio"
+version = "0.2.12"
+description = "Cross-platform audio I/O with PortAudio"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+test = ["numpy"]
 
 [[package]]
 name = "pycodestyle"
@@ -583,12 +617,13 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6f6cdb3f589e914e03e5c9d009c9abe613375831f956bbbc5b550e3e96037415"
+content-hash = "f7f8e49da1e6db3d60c2beb80347bcf11987cf2687c08d1a20a17c53d322c6c1"
 
 [metadata.files]
 appdirs = []
 appnope = []
 asttokens = []
+aubio = []
 audioread = []
 autopep8 = []
 backcall = []
@@ -605,6 +640,7 @@ joblib = []
 librosa = []
 llvmlite = []
 matplotlib-inline = []
+mido = []
 numba = []
 numpy = []
 packaging = []
@@ -616,6 +652,7 @@ pooch = []
 prompt-toolkit = []
 ptyprocess = []
 pure-eval = []
+pyaudio = []
 pycodestyle = []
 pycparser = []
 pygame = []
