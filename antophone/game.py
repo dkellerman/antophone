@@ -1,11 +1,12 @@
 import sys
 import time
 import threading
-from functools import cache
-from colorsys import hls_to_rgb
 import pygame
 import pyo
+from functools import cache
+from colorsys import hls_to_rgb
 from antophone import Instrument, Ant
+
 
 class Game:
     instr = None
@@ -27,20 +28,27 @@ class Game:
         self.instr.add_random_ants(self.initial_ant_count)
         sqw, sqh = self.square_size
         self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
+        self.instr.start()
 
     def run(self):
         self.running = True
         self.init_instr()
+
+        # instrument/ant thread
         self.engine_thread = threading.Thread(target=self.run_engine)
         self.engine_thread.start()
-        
-        self.instr.start()
+
+        # gui thread
         while self.running:
             for event in pygame.event.get():
                 self.handle_event(event)
             self.render()
             pygame.display.update()
             self.clock.tick(self.frame_rate)
+        self.quit()
+
+    def quit(self):
+        self.running = False
         self.engine_running = False
         self.instr.stop()
         self.audio_server.shutdown()
@@ -74,7 +82,6 @@ class Game:
             self.surface.blit(ant.img, (ax, ay))
 
     def handle_event(self, event):
-        # print(event)
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.KEYDOWN:
@@ -85,7 +92,6 @@ class Game:
                     self.instr.add_random_ants(1)
             elif event.key == pygame.K_c:
                 self.instr.ants = []
-
 
     @cache
     def freq_to_color(self, freq, vol):
