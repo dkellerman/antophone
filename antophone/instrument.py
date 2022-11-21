@@ -48,6 +48,10 @@ class Instrument:
             for sound in row:
                 sound.stop()
 
+    def remove_random_ants(self, n):
+        for _ in range(min(len(self.ants), n)):
+            del self.ants[random.randint(0, len(self.ants) - 1)]
+            
     def add_random_ants(self, n):
         for _ in range(n):
             x = random.randint(0, self.width - 1)

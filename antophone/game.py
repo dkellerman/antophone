@@ -10,7 +10,7 @@ from antophone import Instrument, Ant
 class Game:
     instr = None
     square_size = Ant.size
-    rnd_ant_ct = 10
+    initial_ant_count = 1
     frame_rate = 60
     bg_color = (0, 0, 0)
     delay = .1
@@ -24,7 +24,7 @@ class Game:
     def init_instr(self):
         self.audio_server.start()
         self.instr = Instrument()
-        self.instr.add_random_ants(self.rnd_ant_ct)
+        self.instr.add_random_ants(self.initial_ant_count)
         sqw, sqh = self.square_size
         self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
 
@@ -77,8 +77,17 @@ class Game:
         # print(event)
         if event.type == pygame.QUIT:
             self.running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                if event.mod & pygame.KMOD_SHIFT:
+                    self.instr.remove_random_ants(1)
+                else:
+                    self.instr.add_random_ants(1)
+            elif event.key == pygame.K_c:
+                self.instr.ants = []
+
 
     @cache
     def freq_to_color(self, freq, vol):
-        r, g, b = [int(x * 255) for x in hls_to_rgb(freq, (vol ** 2), 0.5)]
+        r, g, b = [min(255, int(x * 255)) for x in hls_to_rgb(freq, (vol ** 2), 0.5)]
         return pygame.Color(r, g, b)
