@@ -6,7 +6,7 @@ import pyo
 from librosa import midi_to_hz
 from functools import cache
 from colorsys import hls_to_rgb
-from antophone import Instrument, Ant, mic, midi
+from antophone import Instrument, Ant, mic, midi, layouts
 
 
 class Game:
@@ -17,9 +17,10 @@ class Game:
     frame_rate = 60
     bg_color = (0, 0, 0)
     delay = .1
-    instr_copies = 4
+    instr_copies = 3
     user_impact = .5
     dragging = False
+    layout = layouts.FIFTHS
 
     @property
     def square_size(self):
@@ -28,12 +29,12 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption('Antophone')
+        self.audio_server = pyo.Server(buffersize=1024).boot()
         self.clock = pygame.time.Clock()
-        self.audio_server = pyo.Server().boot()
 
     def init_instr(self):
         self.audio_server.start()
-        self.instr = Instrument(copies=self.instr_copies)
+        self.instr = Instrument(layout=self.layout, copies=self.instr_copies)
         self.render_surface()
         self.instr.add_random_ants(self.initial_ant_count)
         self.instr.start()
@@ -113,7 +114,7 @@ class Game:
                     self.instr.remove_random_ants(1)
                 else:
                     self.instr.add_random_ants(1)
-            elif event.key == pygame.K_m:
+            elif event.key == pygame.K_r:
                 if mic.running:
                     print('stopping mic')
                     mic.stop()
@@ -126,21 +127,19 @@ class Game:
                 self.instr.ants = []
             elif event.key == pygame.K_z:
                 if event.mod & pygame.KMOD_SHIFT:
-                    self.zoom = max(self.zoom - 1, 1)
+                    self.zoom = max(self.zoom - .5, 1)
                 else:
-                    self.zoom = min(self.zoom + 1, 5)
+                    self.zoom = min(self.zoom + .5, 5)
                 self.render_surface()
 
     def handle_midi_note(self, note):
         hz = midi_to_hz(note.note)
         vol = min(max(note.velocity / 127, 0), self.user_impact)
         hits = np.where(self.instr.freqs == hz)
-        print("[MIDI]", hz, vol, 'hits:', len(hits[0]))
         for y, x in zip(*hits):
             self.instr.adjust_freq(x, y, vol)
 
     def handle_audio_pitch(self, pitch, confidence):
-        print('[P]', pitch, confidence)
         for y, row in enumerate(self.instr.freqs):
             for x, freq in enumerate(row):
                 if freq >= pitch - 5 and freq <= pitch + 5:

@@ -7,13 +7,11 @@ from antophone import Ant
 
 CAP_VOL = 1.0
 CAP_FREQ = 5000.0
-LAYOUT = [
-    ['F#5', 'C#5', 'G#5', 'D#5', 'A#5', 'F5', 'C5', 'G5', 'D5', 'A5', 'E5', 'B5'],
-    ['F#4', 'C#4', 'G#4', 'D#4', 'A#4', 'F4', 'C4', 'G4', 'D4', 'A4', 'E4', 'B4'],
-    ['F#3', 'C#3', 'G#3', 'D#3', 'A#3', 'F3', 'C3', 'G3', 'D3', 'A3', 'E3', 'B3'],
-    ['F#2', 'C#2', 'G#2', 'D#2', 'A#2', 'F2', 'C2', 'G2', 'D2', 'A2', 'E2', 'B2'],
-    ['F#1', 'C#1', 'G#1', 'D#1', 'A#1', 'F1', 'C1', 'G1', 'D1', 'A1', 'E1', 'B1'],
-]
+
+DEFAULT_SYMPATHIES = (
+    (-2, -1, 1, 2),  # x deltas
+    (-2, -1, 1, 2),  # y deltas
+)
 
 
 class Instrument:
@@ -21,9 +19,10 @@ class Instrument:
     ant_impact = .1
     treshold = 0.4
 
-    def __init__(self, layout=LAYOUT, copies=1):
+    def __init__(self, layout, copies=1, sympathies=DEFAULT_SYMPATHIES):
         layout_width = len(layout[0])
         layout_height = len(layout)
+        self.sympathies = sympathies
         self.width = layout_width * copies
         self.height = layout_height * copies
         self.freqs = np.array([[hz(n) for n in row * copies] for row in layout * copies])
@@ -58,24 +57,19 @@ class Instrument:
             ant = Ant(self, x, y)
             self.ants.append(ant)
 
-    def adjust_freq(self, x, y, delta):
-        self.volumes[y][x] += delta
+    def adjust_freq(self, x, y, dfreq):
+        self.volumes[y][x] += dfreq
 
-        # sympathetic resonances
-        w, h = self.width, self.height
-        for i in range(1, 3):
-            df = delta / (2**i)
-            dx = dy = i
-            xnext, xprev = x + dx, x - dx
-            ynext, yprev = y + dy, y - dy
-            if xnext < w - 1:
-                self.volumes[y][xnext] += df
-            if xprev > 0:
-                self.volumes[y][xprev] += df
-            if ynext < h - 1:
-                self.volumes[ynext][x] += df
-            if yprev > 0:
-                self.volumes[yprev][x] += df
+        # apply sympathetic resonances
+        for dx, dy in zip(*self.sympathies):
+            dfx = dfreq / (2**abs(dx))
+            dfy = dfreq / (2**abs(dy))
+            xnext = x + dx
+            ynext = y + dy
+            if xnext < self.width - 1 and xnext > 0:
+                self.volumes[y][xnext] += dfx
+            if ynext < self.height - 1 and ynext > 0:
+                self.volumes[ynext][x] += dfy
 
     def decay(self):
         self.volumes *= self.decay_rate
