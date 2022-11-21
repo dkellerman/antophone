@@ -6,8 +6,8 @@ class Ant:
     img = pygame.image.load('images/ant.png')
     size = (img.get_width(), img.get_height())
     moves = ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0))
+    randomness = .5
     last_move = None
-    wildness = .05
 
     def __init__(self, instr, x, y):
         self.instr = instr
@@ -18,15 +18,22 @@ class Ant:
         self.y = y
 
     def move(self):
-        moves = list(self.moves)
-        random.shuffle(moves)
-        if self.last_move and (self.last_move != (0, 0)) and (random.random() > self.wildness):
-            moves.insert(0, self.last_move)
-        for i, (dx, dy) in enumerate(moves):
-            x2 = self.x + dx
-            y2 = self.y + dy
-            if x2 < 0 or x2 >= self.instr.width or y2 < 0 or y2 >= self.instr.height:
-                continue
-            self.last_move = (dx, dy)
-            self.set_loc(x2, y2)
-            break
+        legal_moves = [
+            m for m in list(self.moves) if
+            (self.x + m[0] >= 0) and
+            (self.x + m[0] < (self.instr.width - 1)) and
+            (self.y + m[1] >= 0) and
+            (self.y + m[1] < (self.instr.height - 1))
+        ]
+        if random.random() < self.randomness:
+            move = random.choice(legal_moves)
+        else:
+            random.shuffle(legal_moves)
+            move_scores = dict()
+            for dx, dy in legal_moves:
+                x2 = self.x + dx
+                y2 = self.y + dy
+                move_scores[(dx, dy)] = self.instr.volumes[y2][x2]
+            move = max(move_scores, key=move_scores.get)
+        self.last_move = move
+        self.set_loc(self.x + move[0], self.y + move[1])
