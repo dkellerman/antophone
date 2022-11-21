@@ -20,12 +20,12 @@ class Ant:
     def move(self):
         moves = list(self.moves)
         random.shuffle(moves)
-        if self.last_move and (random.random() > self.wildness):
+        if self.last_move and (self.last_move != (0, 0)) and (random.random() > self.wildness):
             moves.insert(0, self.last_move)
         for i, (dx, dy) in enumerate(moves):
             x2 = self.x + dx
             y2 = self.y + dy
-            if x2 < 0 or x2 >= self.instr.size[0] or y2 < 0 or y2 >= self.instr.size[1]:
+            if x2 < 0 or x2 >= self.instr.width or y2 < 0 or y2 >= self.instr.height:
                 continue
             self.last_move = (dx, dy)
             self.set_loc(x2, y2)

@@ -1,7 +1,7 @@
 # Antophone
 
 ## Install (Mac)
-* `brew install aubio`
+* `brew install portaudio portmidi libsndfile liblo aubio`
 * `CFLAGS="-I/opt/homebrew/include -L/opt/homebrew/lib" poetry install`
 * `poetry shell`
 * `./main.py`
