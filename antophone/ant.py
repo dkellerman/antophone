@@ -1,3 +1,4 @@
+import numpy as np
 import pygame
 import random
 
@@ -6,10 +7,10 @@ class Ant:
     img = pygame.image.load('images/ant.png')
     size = (img.get_width(), img.get_height())
     moves = ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0))
-    randomness = .5
     last_move = None
 
     def __init__(self, instr, x, y):
+        self.randomness = min(max(.1, np.random.normal(.5, .1, 1)[0]), .9)
         self.instr = instr
         self.set_loc(x, y)
 

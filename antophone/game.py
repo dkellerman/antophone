@@ -127,9 +127,9 @@ class Game:
                 self.instr.ants = []
             elif event.key == pygame.K_z:
                 if event.mod & pygame.KMOD_SHIFT:
-                    self.zoom = max(self.zoom - .5, 1)
+                    self.zoom = max(self.zoom - 1, 1)
                 else:
-                    self.zoom = min(self.zoom + .5, 5)
+                    self.zoom = min(self.zoom + 1, 5)
                 self.render_surface()
 
     def handle_midi_note(self, note):
