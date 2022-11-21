@@ -10,11 +10,17 @@ from antophone import Instrument, Ant
 
 class Game:
     instr = None
-    square_size = Ant.size
+    base_square_size = Ant.size
+    zoom = 1
     initial_ant_count = 1
     frame_rate = 60
     bg_color = (0, 0, 0)
     delay = .1
+    instr_copies = 3
+
+    @property
+    def square_size(self):
+        return self.base_square_size[0] * self.zoom, self.base_square_size[1] * self.zoom
 
     def __init__(self):
         pygame.init()
@@ -24,10 +30,9 @@ class Game:
 
     def init_instr(self):
         self.audio_server.start()
-        self.instr = Instrument()
+        self.instr = Instrument(copies=self.instr_copies)
+        self.render_surface()
         self.instr.add_random_ants(self.initial_ant_count)
-        sqw, sqh = self.square_size
-        self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
         self.instr.start()
 
     def run(self):
@@ -92,6 +97,17 @@ class Game:
                     self.instr.add_random_ants(1)
             elif event.key == pygame.K_c:
                 self.instr.ants = []
+            elif event.key == pygame.K_z:
+                if event.mod & pygame.KMOD_SHIFT:
+                    self.zoom = max(self.zoom - 1, 1)
+                else:
+                    self.zoom = min(self.zoom + 1, 5)
+                self.render_surface()
+
+    def render_surface(self):
+        sqw, sqh = self.square_size
+        self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
+        return self.surface
 
     @cache
     def freq_to_color(self, freq, vol):

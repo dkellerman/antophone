@@ -21,9 +21,9 @@ class Ant:
         legal_moves = [
             m for m in list(self.moves) if
             (self.x + m[0] >= 0) and
-            (self.x + m[0] < (self.instr.width - 1)) and
+            (self.x + m[0] < (self.instr.width)) and
             (self.y + m[1] >= 0) and
-            (self.y + m[1] < (self.instr.height - 1))
+            (self.y + m[1] < (self.instr.height))
         ]
         if random.random() < self.randomness:
             move = random.choice(legal_moves)

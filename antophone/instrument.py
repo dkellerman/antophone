@@ -22,7 +22,7 @@ class Instrument:
     ant_impact = .1
     treshold = 0.4
 
-    def __init__(self, layout=LAYOUT, copies=3):
+    def __init__(self, layout=LAYOUT, copies=1):
         self.width = len(layout[0]) * copies
         self.height = len(layout) * copies
         self.freqs = np.array([[hz(n) for n in row * copies] for row in layout * copies])
