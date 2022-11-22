@@ -6,42 +6,25 @@ import pyo
 from librosa import midi_to_hz
 from functools import cache
 from colorsys import hls_to_rgb
-from antophone import Instrument, Ant, mic, midi, layouts
+from antophone import Config, Instrument, Ant, mic, midi
 
 
 class Game:
-    instr = None
-    base_square_size = Ant.size
+    instr = Instrument()
     zoom = 1
-    initial_ant_count = 0
-    frame_rate = 60
-    bg_color = (0, 0, 0)
-    delay = .1
-    instr_copies = 3
-    user_impact = .5
-    dragging = False
-    layout = layouts.FIFTHS
-
-    @property
-    def square_size(self):
-        return self.base_square_size[0] * self.zoom, self.base_square_size[1] * self.zoom
 
     def __init__(self):
         pygame.init()
         pygame.display.set_caption('Antophone')
-        self.audio_server = pyo.Server(buffersize=1024).boot()
-        self.clock = pygame.time.Clock()
-
-    def init_instr(self):
-        self.audio_server.start()
-        self.instr = Instrument(layout=self.layout, copies=self.instr_copies)
         self.render_surface()
-        self.instr.add_random_ants(self.initial_ant_count)
+        self.clock = pygame.time.Clock()
+        self.audio_server = pyo.Server(buffersize=Config.buffer_size).boot()
+        self.audio_server.start()
+        self.instr.add_random_ants(Config.initial_ant_count)
         self.instr.start()
 
     def run(self):
         self.running = True
-        self.init_instr()
 
         # instrument/ant thread
         self.engine_thread = threading.Thread(target=self.run_engine)
@@ -58,7 +41,7 @@ class Game:
                 self.handle_event(event)
             self.render()
             pygame.display.update()
-            self.clock.tick(self.frame_rate)
+            self.clock.tick(Config.frame_rate)
 
     def quit(self):
         print('quitting...')
@@ -76,11 +59,11 @@ class Game:
             for ant in self.instr.ants:
                 ant.move()
             self.instr.update()
-            time.sleep(self.delay)
+            time.sleep(Config.engine_delay)
 
     def render(self):
         sqw, sqh = self.square_size
-        self.surface.fill(self.bg_color)
+        self.surface.fill(Config.bg_color)
         pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
 
         for y in range(self.instr.height):
@@ -95,19 +78,13 @@ class Game:
         for ant in self.instr.ants:
             ax = (ant.x * sqw) + (sqw / 2) - (ant.img.get_width() / 2)
             ay = (ant.y * sqh) + (sqh / 2) - (ant.img.get_height() / 2)
-            self.surface.blit(ant.img, (ax, ay))
+            self.surface.blit(Ant.img, (ax, ay))
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            t = int(time.time())
-            self.dragging = t
-            self.touch(event.pos, t)
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-        elif event.type == pygame.MOUSEMOTION and self.dragging:
-            self.touch(event.pos, int(time.time()))
+            self.touch(event.pos)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 if event.mod & pygame.KMOD_SHIFT:
@@ -134,7 +111,7 @@ class Game:
 
     def handle_midi_note(self, note):
         hz = midi_to_hz(note.note)
-        vol = min(max(note.velocity / 127, 0), self.user_impact)
+        vol = min(max(note.velocity / 127, 0), Config.user_impact)
         hits = np.where(self.instr.freqs == hz)
         for y, x in zip(*hits):
             self.instr.adjust_freq(x, y, vol)
@@ -143,19 +120,11 @@ class Game:
         for y, row in enumerate(self.instr.freqs):
             for x, freq in enumerate(row):
                 if freq >= pitch - 5 and freq <= pitch + 5:
-                    self.instr.adjust_freq(x, y, self.user_impact)
+                    self.instr.adjust_freq(x, y, Config.user_impact / 2)
 
     def touch(self, pos, t=None):
         x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
-        if not self.dragging:
-            impact = self.user_impact
-        else:
-            dt = t - self.dragging
-            impact = self.user_impact / (4**dt)
-            if impact < .01:
-                self.dragging = False
-                return
-        self.instr.adjust_freq(x, y, impact)
+        self.instr.adjust_freq(x, y, Config.user_impact)
 
     def render_surface(self):
         sqw, sqh = self.square_size
@@ -164,5 +133,13 @@ class Game:
 
     @cache
     def freq_to_color(self, freq, vol):
-        r, g, b = [min(255, int(x * 255)) for x in hls_to_rgb(freq, (vol ** 2), 0.5)]
+        r, g, b = [ min(255, int(val * 255)) for val in hls_to_rgb(
+            freq,
+            (vol ** 2),
+            Config.instr_hue,
+        )]
         return pygame.Color(r, g, b)
+
+    @property
+    def square_size(self):
+        return Config.base_square_size[0] * self.zoom, Config.base_square_size[1] * self.zoom

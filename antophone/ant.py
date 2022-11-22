@@ -1,16 +1,15 @@
 import numpy as np
 import pygame
 import random
-
+from antophone import Config
 
 class Ant:
-    img = pygame.image.load('images/ant.png')
+    img = pygame.image.load(Config.ant_img)
     size = (img.get_width(), img.get_height())
     moves = ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0))
     last_move = None
 
     def __init__(self, instr, x, y):
-        self.randomness = min(max(.1, np.random.normal(.5, .1, 1)[0]), .9)
         self.instr = instr
         self.set_loc(x, y)
 
@@ -26,7 +25,7 @@ class Ant:
             (self.y + m[1] >= 0) and
             (self.y + m[1] < (self.instr.height))
         ]
-        if random.random() < self.randomness:
+        if random.random() < Config.ant_randomness:
             move = random.choice(legal_moves)
         else:
             random.shuffle(legal_moves)
