@@ -1,7 +1,8 @@
 import numpy as np
 import pygame
 import random
-from antophone import Config
+from antophone.config import Config
+
 
 class Ant:
     img = pygame.image.load(Config.ant_img)
@@ -33,7 +34,14 @@ class Ant:
             for dx, dy in legal_moves:
                 x2 = self.x + dx
                 y2 = self.y + dy
-                move_scores[(dx, dy)] = self.instr.volumes[y2][x2]
-            move = max(move_scores, key=move_scores.get)
+                move_scores[(dx, dy)] = self.instr.volumes[y2][x2] ** (Config.ant_antsiness * 10)
+            scores = list(move_scores.values())
+            if sum(scores) == 0:
+                move = random.choice(legal_moves)
+            else:
+                # print('***',scores,sum(scores))
+                val = np.random.choice(scores, p=[s/sum(scores) for s in scores])
+                move = list(move_scores.keys())[scores.index(val)]
+
         self.last_move = move
         self.set_loc(self.x + move[0], self.y + move[1])

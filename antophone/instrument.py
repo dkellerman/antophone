@@ -2,21 +2,22 @@ import random
 import pyo
 import numpy as np
 from librosa import note_to_hz as hz
-from antophone import Ant, Config
-
+from antophone import Ant
+from antophone.config import Config
 
 CAP_VOL = 1.0
 CAP_FREQ = 5000.0
 
+
 class Instrument:
     def __init__(self):
         layout = Config.instr_layout
-        copies = Config.instr_copies
+        (xcopies, ycopies) = Config.instr_copies
         self.layout_width = len(layout[0])
         self.layout_height = len(layout)
-        self.width = self.layout_width * copies
-        self.height = self.layout_height * copies
-        self.freqs = np.array([[hz(n) for n in row * copies] for row in layout * copies])
+        self.width = self.layout_width * xcopies
+        self.height = self.layout_height * ycopies
+        self.freqs = np.array([[hz(n) for n in row * xcopies] for row in layout * ycopies])
         self.max_freq = max([max(row) for row in self.freqs])
         self.volumes = np.zeros((self.height, self.width), np.float32)
         self.ants = []

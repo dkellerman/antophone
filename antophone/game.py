@@ -3,10 +3,14 @@ import time
 import threading
 import pygame
 import pyo
+import importlib
 from librosa import midi_to_hz
 from functools import cache
 from colorsys import hls_to_rgb
-from antophone import Config, Instrument, Ant, mic, midi
+import antophone
+from antophone import Instrument, Ant, mic, midi
+
+Config = antophone.config.Config
 
 
 class Game:
@@ -102,12 +106,38 @@ class Game:
                     self.mic_thread.start()
             elif event.key == pygame.K_c:
                 self.instr.ants = []
+            elif event.key == pygame.K_SLASH:
+                self.reload_config()
             elif event.key == pygame.K_z:
                 if event.mod & pygame.KMOD_SHIFT:
                     self.zoom = max(self.zoom - 1, 1)
                 else:
                     self.zoom = min(self.zoom + 1, 5)
                 self.render_surface()
+
+    def reload_config(self):
+        global Config
+        old_attrs = set(vars(Config).items())
+        importlib.reload(antophone.config)
+        Config = antophone.config.Config
+        antophone.instrument.Config = Config
+
+        new_attrs = set(vars(Config).items())
+        keys = [pair[0] for pair in old_attrs ^ new_attrs if '__' not in pair[0]]
+        print('updating config', keys)
+        if len([k for k in keys if k.startswith('instr_')]) > 0:
+            self.reload_instrument()
+        self.render_surface()
+
+    def reload_instrument(self):
+        ants = list(self.instr.ants)
+        vols = np.array(self.instr.volumes)
+        self.instr.stop()
+        self.instr = Instrument()
+        self.instr.ants = [a for a in ants if a.x < self.instr.width and a.y < self.instr.height]
+        vols.resize(self.instr.volumes.shape)
+        self.instr.volumes = vols
+        self.instr.start()
 
     def handle_midi_note(self, note):
         hz = midi_to_hz(note.note)
@@ -133,7 +163,7 @@ class Game:
 
     @cache
     def freq_to_color(self, freq, vol):
-        r, g, b = [ min(255, int(val * 255)) for val in hls_to_rgb(
+        r, g, b = [min(255, int(val * 255)) for val in hls_to_rgb(
             freq,
             (vol ** 2),
             Config.instr_hue,
