@@ -100,7 +100,7 @@ class Game:
             self.mic_thread.start()
 
     def set_zoom(self, val):
-        self.zoom = min(max(val, -3), 3)
+        self.zoom = min(max(val, -5), 5)
         self.render_surface()
 
     def toggle_mute(self):
@@ -125,6 +125,7 @@ class Game:
         print('updating config', keys)
         if len([k for k in keys if k.startswith('instr_')]) > 0:
             self.reload_instrument()
+        self.freq_to_color.cache_clear()
         self.render_surface()
 
     def reload_instrument(self):
