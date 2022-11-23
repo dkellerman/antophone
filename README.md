@@ -8,4 +8,11 @@
 * `./main.py`
 
 
-
+## Keys
+* `a`|`A` - add/remove ant
+* `c` - clear ants
+* `>`|`<` - faster/slower cycle time
+* `z`|`Z` - zoom in/out
+* `m` - toggle mute
+* `r` - toggle record
+* `/` - hot reload config

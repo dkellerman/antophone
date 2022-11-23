@@ -18,5 +18,5 @@ class Config:
     user_impact = .8
     initial_ant_count = 0
     frame_rate = 60
-    engine_delay = .05
+    cycle_time = .05
     buffer_size = 2056

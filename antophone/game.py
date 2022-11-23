@@ -4,6 +4,7 @@ import threading
 import pygame
 import pyo
 import importlib
+import datetime
 from librosa import midi_to_hz
 from functools import cache
 from colorsys import hls_to_rgb
@@ -61,10 +62,13 @@ class Game:
     def run_engine(self):
         self.engine_running = True
         while self.engine_running:
+            ts = datetime.datetime.now().microsecond / 1000000
             for ant in self.instr.ants:
                 ant.move()
             self.instr.update()
-            time.sleep(Config.engine_delay)
+            delta = (datetime.datetime.now().microsecond / 1000000) - ts
+            rem = (Config.cycle_time - delta) % Config.cycle_time
+            time.sleep(max(rem, 0))
 
     def render(self):
         sqw, sqh = self.square_size
@@ -85,45 +89,29 @@ class Game:
             ay = (ant.y * sqh) + (sqh / 2) - (ant.img.get_height() / 2)
             self.surface.blit(Ant.img, (ax, ay))
 
-    def handle_event(self, event):
-        if event.type == pygame.QUIT:
-            self.running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            self.touch(event.pos)
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a:
-                if event.mod & pygame.KMOD_SHIFT:
-                    self.instr.remove_random_ants(1)
-                else:
-                    self.instr.add_random_ants(1)
-            elif event.key == pygame.K_r:
-                if mic.running:
-                    print('stopping mic')
-                    mic.stop()
-                else:
-                    print('starting mic')
-                    cb = lambda *args: self.handle_audio_pitch(*args)
-                    self.mic_thread = threading.Thread(target=mic.listen, args=[cb])
-                    self.mic_thread.start()
-            elif event.key == pygame.K_c:
-                self.instr.ants = []
-            elif event.key == pygame.K_SLASH:
-                self.reload_config()
-            elif event.key == pygame.K_z:
-                if event.mod & pygame.KMOD_SHIFT:
-                    self.zoom = max(self.zoom - 1, 1)
-                else:
-                    self.zoom = min(self.zoom + 1, 5)
-                self.render_surface()
-            elif event.key == pygame.K_m:
-                if self.mute:
-                    self.audio_server.amp = self._amp
-                    self.mute = False
-                    self._amp = None
-                else:
-                    self._amp = self.audio_server.amp
-                    self.audio_server.amp = 0
-                    self.mute = True
+    def toggle_mic(self):
+        if mic.running:
+            print('stopping mic')
+            mic.stop()
+        else:
+            print('starting mic')
+            cb = lambda *args: self.handle_audio_pitch(*args)
+            self.mic_thread = threading.Thread(target=mic.listen, args=[cb])
+            self.mic_thread.start()
+
+    def set_zoom(self, val):
+        self.zoom = min(max(val, -3), 3)
+        self.render_surface()
+
+    def toggle_mute(self):
+        if self.mute:
+            self.audio_server.amp = self._amp
+            self.mute = False
+            self._amp = None
+        else:
+            self._amp = self.audio_server.amp
+            self.audio_server.amp = 0
+            self.mute = True
 
     def reload_config(self):
         global Config
@@ -185,3 +173,36 @@ class Game:
     @property
     def square_size(self):
         return Config.base_square_size[0] * self.zoom, Config.base_square_size[1] * self.zoom
+
+    def handle_event(self, event):
+        if event.type == pygame.QUIT:
+            self.running = False
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            self.touch(event.pos)
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                if event.mod & pygame.KMOD_SHIFT:
+                    self.instr.remove_random_ants(1)
+                else:
+                    self.instr.add_random_ants(1)
+            elif event.key == pygame.K_r:
+                self.toggle_mic()
+            elif event.key == pygame.K_c:
+                self.instr.ants = []
+            elif event.key == pygame.K_SLASH:
+                self.reload_config()
+            elif event.key == pygame.K_z:
+                if event.mod & pygame.KMOD_SHIFT:
+                    self.set_zoom(self.zoom - 1)
+                else:
+                    self.set_zoom(self.zoom + 1)
+            elif event.key == pygame.K_m:
+                self.toggle_mute()
+            elif event.key == pygame.K_PERIOD and event.mod & pygame.KMOD_SHIFT:
+                Config.cycle_time /= 2
+                print('cycle time', Config.cycle_time)
+            elif event.key == pygame.K_COMMA and event.mod & pygame.KMOD_SHIFT:
+                Config.cycle_time *= 2
+                print('cycle time', Config.cycle_time)
