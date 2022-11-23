@@ -16,6 +16,7 @@ Config = antophone.config.Config
 class Game:
     instr = Instrument()
     zoom = 1
+    mute = False
 
     def __init__(self):
         pygame.init()
@@ -114,6 +115,15 @@ class Game:
                 else:
                     self.zoom = min(self.zoom + 1, 5)
                 self.render_surface()
+            elif event.key == pygame.K_m:
+                if self.mute:
+                    self.audio_server.amp = self._amp
+                    self.mute = False
+                    self._amp = None
+                else:
+                    self._amp = self.audio_server.amp
+                    self.audio_server.amp = 0
+                    self.mute = True
 
     def reload_config(self):
         global Config
@@ -163,6 +173,8 @@ class Game:
 
     @cache
     def freq_to_color(self, freq, vol):
+        if vol == 0:
+            return Config.bg_color
         r, g, b = [min(255, int(val * 255)) for val in hls_to_rgb(
             freq,
             (vol ** 2),
