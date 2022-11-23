@@ -3,4 +3,5 @@ __pycache__
 *.swp
 TODO.md
 .DS_Store
-
+build
+dist

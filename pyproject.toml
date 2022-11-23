@@ -18,6 +18,7 @@ sounddevice = "^0.4.5"
 ipython = "^8.6.0"
 pep8 = "^1.7.1"
 autopep8 = "^2.0.0"
+py2app = "^0.28.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

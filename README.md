@@ -14,5 +14,10 @@
 * `>`|`<` - faster/slower cycle time
 * `z`|`Z` - zoom in/out
 * `m` - toggle mute
-* `r` - toggle record
+* `r` - toggle record (mic input)
 * `/` - hot reload config
+
+## Build Mac App
+(from poetry shell)
+* `python ./setup.py py2app -A`
+* `./dist/Antophone.app/Contents/MacOS/Antophone`

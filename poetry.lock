@@ -1,4 +1,12 @@
 [[package]]
+name = "altgraph"
+version = "0.17.3"
+description = "Python graph (network) package"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "appdirs"
 version = "1.4.4"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -225,6 +233,17 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "macholib"
+version = "1.16.2"
+description = "Mach-O header analysis and editing"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+altgraph = ">=0.17"
+
+[[package]]
 name = "matplotlib-inline"
 version = "0.1.6"
 description = "Inline Matplotlib backend for Jupyter"
@@ -246,6 +265,17 @@ python-versions = "*"
 [package.extras]
 dev = ["check-manifest (>=0.35)", "flake8 (>=3.4.1)", "pytest (>=3.2.2)", "sphinx (>=1.6.3)", "tox (>=2.8.2)"]
 ports = ["python-rtmidi (>=1.1.0)"]
+
+[[package]]
+name = "modulegraph"
+version = "0.19.3"
+description = "Python module dependency analysis tool"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+altgraph = ">=0.15"
 
 [[package]]
 name = "numba"
@@ -366,15 +396,17 @@ python-versions = "*"
 tests = ["pytest"]
 
 [[package]]
-name = "pyaudio"
-version = "0.2.12"
-description = "Cross-platform audio I/O with PortAudio"
-category = "main"
+name = "py2app"
+version = "0.28.4"
+description = "Create standalone Mac OS X applications with Python"
+category = "dev"
 optional = false
 python-versions = "*"
 
-[package.extras]
-test = ["numpy"]
+[package.dependencies]
+altgraph = ">=0.16"
+macholib = ">=1.16"
+modulegraph = ">=0.19.3"
 
 [[package]]
 name = "pycodestyle"
@@ -429,18 +461,6 @@ python-versions = ">=3.6.8"
 
 [package.extras]
 diagrams = ["railroad-diagrams", "jinja2"]
-
-[[package]]
-name = "pysinewave"
-version = "0.0.6"
-description = "Generate and play sine waves in real time, that can make smooth, continuous transitions in pitch and volume."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-numpy = "*"
-sounddevice = "*"
 
 [[package]]
 name = "requests"
@@ -617,9 +637,10 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f7f8e49da1e6db3d60c2beb80347bcf11987cf2687c08d1a20a17c53d322c6c1"
+content-hash = "6779fc1d1a62a5fca2a2600c6938cf5f597894b283ed727933b9a457abb0d06d"
 
 [metadata.files]
+altgraph = []
 appdirs = []
 appnope = []
 asttokens = []
@@ -639,8 +660,10 @@ jedi = []
 joblib = []
 librosa = []
 llvmlite = []
+macholib = []
 matplotlib-inline = []
 mido = []
+modulegraph = []
 numba = []
 numpy = []
 packaging = []
@@ -652,14 +675,13 @@ pooch = []
 prompt-toolkit = []
 ptyprocess = []
 pure-eval = []
-pyaudio = []
+py2app = []
 pycodestyle = []
 pycparser = []
 pygame = []
 pygments = []
 pyo = []
 pyparsing = []
-pysinewave = []
 requests = []
 resampy = []
 scikit-learn = []

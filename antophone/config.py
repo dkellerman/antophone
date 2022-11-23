@@ -1,5 +1,5 @@
+import os
 from antophone import layouts
-
 
 class Config:
     instr_layout = layouts.FIFTHS
@@ -13,7 +13,7 @@ class Config:
     sympathies = ((-2, -1, 1, 2), (-2, -1, 1, 2))
     ant_randomness = .1
     ant_antsiness = .08
-    ant_img = 'images/ant.png'
+    ant_img = os.path.join(os.path.dirname(__file__), '../images/ant.png')
     ant_weight = 0.05
     user_impact = .8
     initial_ant_count = 0
