@@ -7,7 +7,6 @@ from antophone.config import Config
 class Ant:
     img = pygame.image.load(Config.ant_img)
     size = (img.get_width(), img.get_height())
-    moves = ((0, 0), (0, 1), (0, -1), (1, 0), (-1, 0))
     last_move = None
 
     def __init__(self, instr, x, y):
@@ -20,7 +19,7 @@ class Ant:
 
     def move(self):
         legal_moves = [
-            m for m in list(self.moves) if
+            m for m in list(Config.ant_moves) if
             (self.x + m[0] >= 0) and
             (self.x + m[0] < (self.instr.width)) and
             (self.y + m[1] >= 0) and

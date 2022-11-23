@@ -122,6 +122,17 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "dissonant"
+version = "0.1.1"
+description = "Musical chord dissonance models"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "executing"
 version = "1.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
@@ -637,7 +648,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "6779fc1d1a62a5fca2a2600c6938cf5f597894b283ed727933b9a457abb0d06d"
+content-hash = "e0fc977195275cea0490637df59052e572ea5d85a35e446805739af0d1a8aa7d"
 
 [metadata.files]
 altgraph = []
@@ -653,6 +664,7 @@ cffi = []
 charset-normalizer = []
 colorama = []
 decorator = []
+dissonant = []
 executing = []
 idna = []
 ipython = []

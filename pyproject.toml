@@ -13,6 +13,7 @@ pyo = "^1.0.4"
 mido = "^1.2.10"
 aubio = "^0.4.9"
 sounddevice = "^0.4.5"
+dissonant = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 ipython = "^8.6.0"

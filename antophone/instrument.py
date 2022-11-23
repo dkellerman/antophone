@@ -2,6 +2,7 @@ import random
 import pyo
 import numpy as np
 from librosa import note_to_hz as hz
+from dissonant import harmonic_tone, dissonance
 from antophone import Ant
 from antophone.config import Config
 
@@ -20,6 +21,7 @@ class Instrument:
         self.freqs = np.array([[hz(n) for n in row * xcopies] for row in layout * ycopies])
         self.max_freq = max([max(row) for row in self.freqs])
         self.volumes = np.zeros((self.height, self.width), np.float32)
+        self.dissonance = 0
         self.ants = []
 
     def start(self):
@@ -78,10 +80,27 @@ class Instrument:
 
         # calculate and apply new volumes
         new_vols = np.zeros(len(self.sounds))
+        audible = set()
         for y in range(self.height):
             for x in range(self.width):
                 i = ((y * self.width) + x) % len(self.sounds)
                 new_vols[i] += self.volumes[y][x]
+                if new_vols[i] > Config.vol_threshold:
+                    audible.add(self.freqs[y][x])
         for i in range(len(self.sounds)):
-            new_vol = float(min(new_vols[i], CAP_VOL)) if new_vols[i] > Config.vol_treshold else 0
+            new_vol = float(min(new_vols[i], CAP_VOL)) if new_vols[i] > Config.vol_threshold else 0
             self.sounds[i].mul = new_vol
+
+        self.last_dissonance = self.dissonance
+        if len(audible):
+            freqs, amps = harmonic_tone(list(audible), n_partials=2)
+            self.dissonance = dissonance(freqs, amps, model='sethares1993')
+        else:
+            self.dissonance = 0
+
+        # print("dissonance level:", self.last_dissonance, '=>', self.dissonance, ' :: ',
+        #       '^' if self.dissonance > self.last_dissonance else 'v')
+        # if self.dissonance == 0 or self.dissonance > self.last_dissonance:
+        #     self.add_random_ants(1)
+        # else:
+        #     self.remove_random_ants(1)
