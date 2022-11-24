@@ -11,7 +11,7 @@ from colorsys import hls_to_rgb
 import antophone
 from antophone import Instrument, Ant, mic, midi
 
-Config = antophone.config.Config
+C = antophone.config.Config
 
 
 class Game:
@@ -24,9 +24,9 @@ class Game:
         pygame.display.set_caption('Antophone')
         self.render_surface()
         self.clock = pygame.time.Clock()
-        self.audio_server = pyo.Server(buffersize=Config.buffer_size).boot()
+        self.audio_server = pyo.Server(buffersize=C.buffer_size).boot()
         self.audio_server.start()
-        self.instr.add_random_ants(Config.initial_ant_count)
+        self.instr.add_random_ants(C.initial_ant_count)
         self.instr.start()
 
     def run(self):
@@ -47,7 +47,7 @@ class Game:
                 self.handle_event(event)
             self.render()
             pygame.display.update()
-            self.clock.tick(Config.frame_rate)
+            self.clock.tick(C.frame_rate)
 
     def quit(self):
         print('quitting...')
@@ -67,12 +67,12 @@ class Game:
                 ant.move()
             self.instr.update()
             delta = (datetime.datetime.now().microsecond / 1000000) - ts
-            rem = (Config.cycle_time - delta) % Config.cycle_time
+            rem = (C.cycle_time - delta) % C.cycle_time
             time.sleep(max(rem, 0))
 
     def render(self):
         sqw, sqh = self.square_size
-        self.surface.fill(Config.bg_color)
+        self.surface.fill(C.bg_color)
         pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
 
         for y in range(self.instr.height):
@@ -114,13 +114,13 @@ class Game:
             self.mute = True
 
     def reload_config(self):
-        global Config
-        old_attrs = set(vars(Config).items())
+        global C
+        old_attrs = set(vars(C).items())
         importlib.reload(antophone.config)
-        Config = antophone.config.Config
-        antophone.instrument.Config = Config
+        C = antophone.config.Config
+        antophone.instrument.Config = C
 
-        new_attrs = set(vars(Config).items())
+        new_attrs = set(vars(C).items())
         keys = [pair[0] for pair in old_attrs ^ new_attrs if '__' not in pair[0]]
         print('updating config', keys)
         if len([k for k in keys if k.startswith('instr_')]) > 0:
@@ -140,7 +140,7 @@ class Game:
 
     def handle_midi_note(self, note):
         hz = midi_to_hz(note.note)
-        vol = min(max(note.velocity / 127, 0), Config.user_impact)
+        vol = min(max(note.velocity / 127, 0), C.user_impact)
         hits = np.where(self.instr.freqs == hz)
         for y, x in zip(*hits):
             self.instr.adjust_freq(x, y, vol)
@@ -149,11 +149,11 @@ class Game:
         for y, row in enumerate(self.instr.freqs):
             for x, freq in enumerate(row):
                 if freq >= pitch - 5 and freq <= pitch + 5:
-                    self.instr.adjust_freq(x, y, Config.user_impact / 2)
+                    self.instr.adjust_freq(x, y, C.user_impact / 2)
 
     def touch(self, pos, t=None):
         x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
-        self.instr.adjust_freq(x, y, Config.user_impact)
+        self.instr.adjust_freq(x, y, C.user_impact)
 
     def render_surface(self):
         sqw, sqh = self.square_size
@@ -163,17 +163,17 @@ class Game:
     @cache
     def freq_to_color(self, freq, vol):
         if vol == 0:
-            return Config.bg_color
+            return C.bg_color
         r, g, b = [min(255, int(val * 255)) for val in hls_to_rgb(
             freq,
             (vol ** 2),
-            Config.instr_hue,
+            C.instr_hue,
         )]
         return pygame.Color(r, g, b)
 
     @property
     def square_size(self):
-        return Config.base_square_size[0] * self.zoom, Config.base_square_size[1] * self.zoom
+        return C.base_square_size[0] * self.zoom, C.base_square_size[1] * self.zoom
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
@@ -202,8 +202,8 @@ class Game:
             elif event.key == pygame.K_m:
                 self.toggle_mute()
             elif event.key == pygame.K_PERIOD and event.mod & pygame.KMOD_SHIFT:
-                Config.cycle_time /= 2
-                print('cycle time', Config.cycle_time)
+                C.cycle_time /= 2
+                print('cycle time', C.cycle_time)
             elif event.key == pygame.K_COMMA and event.mod & pygame.KMOD_SHIFT:
-                Config.cycle_time *= 2
-                print('cycle time', Config.cycle_time)
+                C.cycle_time *= 2
+                print('cycle time', C.cycle_time)

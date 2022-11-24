@@ -4,7 +4,7 @@ import numpy as np
 from librosa import note_to_hz as hz
 from dissonant import harmonic_tone, dissonance
 from antophone import Ant
-from antophone.config import Config
+from antophone.config import Config as C
 
 CAP_VOL = 1.0
 CAP_FREQ = 5000.0
@@ -12,8 +12,8 @@ CAP_FREQ = 5000.0
 
 class Instrument:
     def __init__(self):
-        layout = Config.instr_layout
-        (xcopies, ycopies) = Config.instr_copies
+        layout = C.instr_layout
+        (xcopies, ycopies) = C.instr_copies
         self.layout_width = len(layout[0])
         self.layout_height = len(layout)
         self.width = self.layout_width * xcopies
@@ -54,8 +54,8 @@ class Instrument:
         self.volumes[y][x] += dfreq
 
         # apply sympathetic resonances
-        for dx, dy in zip(*Config.sympathies):
-            (rdecay_x, rdecay_y) = Config.resonance_decay_factor
+        for dx, dy in zip(*C.sympathies):
+            (rdecay_x, rdecay_y) = C.resonance_decay_factor
             dfx = dfreq / (rdecay_x*abs(dx))
             dfy = dfreq / (rdecay_y**abs(dy))
             xnext = x + dx
@@ -66,14 +66,16 @@ class Instrument:
                 self.volumes[ynext][x] += dfy
 
     def decay(self):
-        self.volumes *= Config.vol_decay_rate
+        self.volumes *= C.vol_decay_rate
 
     def update(self):
         self.decay()
 
         for ant in self.ants:
-            if ant.last_move != (0, 0):
-                self.adjust_freq(ant.x, ant.y, Config.ant_weight)
+            impact = C.ant_weight
+            if ant.last_move == (0, 0):
+                impact *= C.ant_weight_decay
+            self.adjust_freq(ant.x, ant.y, impact)
 
         self.volumes[self.volumes < 0.01] = 0
         self.volumes[self.volumes > 1.0] = 1.0
@@ -85,10 +87,10 @@ class Instrument:
             for x in range(self.width):
                 i = ((y * self.width) + x) % len(self.sounds)
                 new_vols[i] += self.volumes[y][x]
-                if new_vols[i] > Config.vol_threshold:
+                if new_vols[i] > C.vol_threshold:
                     audible.add(self.freqs[y][x])
         for i in range(len(self.sounds)):
-            new_vol = float(min(new_vols[i], CAP_VOL)) if new_vols[i] > Config.vol_threshold else 0
+            new_vol = float(min(new_vols[i], CAP_VOL)) if new_vols[i] > C.vol_threshold else 0
             self.sounds[i].mul = new_vol
 
         self.last_dissonance = self.dissonance
@@ -97,10 +99,3 @@ class Instrument:
             self.dissonance = dissonance(freqs, amps, model='sethares1993')
         else:
             self.dissonance = 0
-
-        # print("dissonance level:", self.last_dissonance, '=>', self.dissonance, ' :: ',
-        #       '^' if self.dissonance > self.last_dissonance else 'v')
-        # if self.dissonance == 0 or self.dissonance > self.last_dissonance:
-        #     self.add_random_ants(1)
-        # else:
-        #     self.remove_random_ants(1)

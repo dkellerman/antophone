@@ -12,17 +12,14 @@ class Config:
     vol_threshold = 0.4
     resonance_decay_factor = (3.0, 2.0)
     sympathies = ((-2, -1, 1, 2), (-2, -1, 1, 2))
-    ant_randomness = .1
-    ant_antsiness = .08
     ant_img = os.path.join(os.path.dirname(__file__), '../images/ant.png')
     ant_weight = 0.05
+    ant_weight_decay = .75
     ant_moves = (
         (0, 0), (0, 1), (0, -1), (1, 0), (-1, 0),
-        # (1, 1), (1, -1), (-1, 1), (-1, -1),
-        # (0, 2), (0, -2), (2, 0), (-2, 0),
-        # (2, 2), (2, -2), (-2, 2), (-2, -2),
+        (1, 1), (1, -1), (-1, 1), (-1, -1),
     )
-    user_impact = .8
+    user_impact = .75
     initial_ant_count = 0
     frame_rate = 60
     cycle_time = .09
