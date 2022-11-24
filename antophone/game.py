@@ -1,93 +1,110 @@
 import numpy as np
 import time
+import random
 import threading
 import pygame
-import pyo
 import importlib
 import datetime
 from librosa import midi_to_hz
-from functools import cache
-from colorsys import hls_to_rgb
 import antophone
-from antophone import Instrument, Ant, mic, midi
+from antophone import Instrument, Ant, mic, midi, utils
 
 C = antophone.config.Config
 
 
 class Game:
     instr = Instrument()
+    ants = []
     zoom = 1
-    mute = False
 
-    def __init__(self):
+    def run(self):
         pygame.init()
         pygame.display.set_caption('Antophone')
         self.render_surface()
-        self.clock = pygame.time.Clock()
-        self.audio_server = pyo.Server(buffersize=C.buffer_size).boot()
-        self.audio_server.start()
-        self.instr.add_random_ants(C.initial_ant_count)
-        self.instr.start()
+        self.add_random_ants(C.initial_ant_count)
 
-    def run(self):
-        self.running = True
-
-        # instrument/ant thread
-        self.engine_thread = threading.Thread(target=self.run_engine)
-        self.engine_thread.start()
+        # instrument thread
+        self.instr_thread = threading.Thread(target=self.instr.run)
+        self.instr_thread.start()
 
         # midi thread
         midi_cb = lambda *args: self.handle_midi_note(*args)
         self.midi_thread = threading.Thread(target=midi.listen, args=[midi_cb])
         self.midi_thread.start()
 
-        # gui thread
+        # ant thread
+        self.ants_thread = threading.Thread(target=self.run_ants)
+        self.ants_thread.start()
+
+        # run main gui loop
+        self.clock = pygame.time.Clock()
+        self.running = True
         while self.running:
             for event in pygame.event.get():
+                if not self.running:
+                    break
                 self.handle_event(event)
             self.render()
             pygame.display.update()
             self.clock.tick(C.frame_rate)
+        self.quit()
+
+    def stop(self):
+        self.running = False
+        self.ants_running = False
 
     def quit(self):
         print('quitting...')
         self.running = False
-        self.engine_running = False
+        self.ants_running = False
         mic.stop()
         midi.stop()
         self.instr.stop()
-        self.audio_server.shutdown()
         pygame.quit()
 
-    def run_engine(self):
-        self.engine_running = True
-        while self.engine_running:
-            ts = datetime.datetime.now().microsecond / 1000000
-            for ant in self.instr.ants:
-                ant.move()
-            self.instr.update()
-            delta = (datetime.datetime.now().microsecond / 1000000) - ts
-            rem = (C.cycle_time - delta) % C.cycle_time
-            time.sleep(max(rem, 0))
+    def run_ants(self):
+        self.ants_running = True
+        while self.ants_running:
+            ts = utils.ts()
+            self.update_ants()
+            delta = utils.ts() - ts
+            remaining = (C.ant_cycle_time - delta) % C.ant_cycle_time
+            time.sleep(max(remaining, 0))
+
+    def update_ants(self):
+        for ant in self.ants:
+            ant.move(update_instr=False)
+        for ant in self.ants:
+            ant.update_instr()
 
     def render(self):
         sqw, sqh = self.square_size
-        self.surface.fill(C.bg_color)
+        self.surface.fill(C.instr.bg_color)
         pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
 
-        for y in range(self.instr.height):
-            for x in range(self.instr.width):
-                freq = self.instr.freqs[y][x] / self.instr.max_freq
-                vol = self.instr.volumes[y][x]
-                color = self.freq_to_color(freq, vol)
+        grid = self.instr.get_grid_colors()
+        for y, row in enumerate(grid):
+            for x, rgb in enumerate(row):
                 x1, y1 = x * sqw, y * sqh
                 x2, y2 = x1 + sqw, y1 + sqh
+                color = pygame.Color(*rgb)
                 pygame.draw.rect(self.surface, color, pygame.Rect(x1, y1, x2, y2))
 
-        for ant in self.instr.ants:
+        for ant in self.ants:
             ax = (ant.x * sqw) + (sqw / 2) - (ant.img.get_width() / 2)
             ay = (ant.y * sqh) + (sqh / 2) - (ant.img.get_height() / 2)
             self.surface.blit(Ant.img, (ax, ay))
+
+    def remove_random_ants(self, n):
+        for _ in range(min(len(self.ants), n)):
+            del self.ants[random.randint(0, len(self.ants) - 1)]
+
+    def add_random_ants(self, n):
+        for _ in range(n):
+            x = random.randint(0, self.instr.width - 1)
+            y = random.randint(0, self.instr.height - 1)
+            ant = Ant(self.instr, x, y)
+            self.ants.append(ant)
 
     def toggle_mic(self):
         if mic.running:
@@ -103,95 +120,67 @@ class Game:
         self.zoom = min(max(val, -5), 5)
         self.render_surface()
 
-    def toggle_mute(self):
-        if self.mute:
-            self.audio_server.amp = self._amp
-            self.mute = False
-            self._amp = None
-        else:
-            self._amp = self.audio_server.amp
-            self.audio_server.amp = 0
-            self.mute = True
-
     def reload_config(self):
-        global C
-        old_attrs = set(vars(C).items())
         importlib.reload(antophone.config)
+        global C
         C = antophone.config.Config
-        antophone.instrument.Config = C
+        antophone.instrument.C = C.instr
+        antophone.ant.C = C.ant
 
-        new_attrs = set(vars(C).items())
-        keys = [pair[0] for pair in old_attrs ^ new_attrs if '__' not in pair[0]]
-        print('updating config', keys)
-        if len([k for k in keys if k.startswith('instr_')]) > 0:
-            self.reload_instrument()
-        self.freq_to_color.cache_clear()
+        # self.reload_instrument()
         self.render_surface()
 
     def reload_instrument(self):
-        ants = list(self.instr.ants)
         vols = np.array(self.instr.volumes)
+        mute = self.instr.mute
         self.instr.stop()
         self.instr = Instrument()
-        self.instr.ants = [a for a in ants if a.x < self.instr.width and a.y < self.instr.height]
+        self.ants = [a for a in self.ants if a.x < self.instr.width and a.y < self.instr.height]
         vols.resize(self.instr.volumes.shape)
         self.instr.volumes = vols
-        self.instr.start()
+        self.instr.mute = mute
+        self.instr._freq_to_color.cache_clear()
+        self.instr_thread = threading.Thread(target=self.instr.run)
+        self.instr_thread.start()
 
     def handle_midi_note(self, note):
         hz = midi_to_hz(note.note)
         vol = min(max(note.velocity / 127, 0), C.user_impact)
-        hits = np.where(self.instr.freqs == hz)
-        for y, x in zip(*hits):
-            self.instr.adjust_freq(x, y, vol)
+        self.instr.touch_freq(hz, vol)
 
     def handle_audio_pitch(self, pitch, confidence):
-        for y, row in enumerate(self.instr.freqs):
-            for x, freq in enumerate(row):
-                if freq >= pitch - 5 and freq <= pitch + 5:
-                    self.instr.adjust_freq(x, y, C.user_impact / 2)
+        print('*', pitch, confidence)
+        self.instr.touch_freq(pitch, C.user_impact / 2, tolerance=C.pitch_tolerance)
 
-    def touch(self, pos, t=None):
+    def touch_instrument_at(self, pos, t=None):
         x, y = pos[0] // self.square_size[0], pos[1] // self.square_size[1]
-        self.instr.adjust_freq(x, y, C.user_impact)
+        self.instr.touch(x, y, C.user_impact)
 
     def render_surface(self):
         sqw, sqh = self.square_size
         self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
         return self.surface
 
-    @cache
-    def freq_to_color(self, freq, vol):
-        if vol == 0:
-            return C.bg_color
-        r, g, b = [min(255, int(val * 255)) for val in hls_to_rgb(
-            freq,
-            (vol ** 2),
-            C.instr_hue,
-        )]
-        return pygame.Color(r, g, b)
-
     @property
     def square_size(self):
-        return C.base_square_size[0] * self.zoom, C.base_square_size[1] * self.zoom
+        sqw, sqh = C.base_square_size
+        return sqw * self.zoom, sqh * self.zoom
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
-            self.running = False
-
+            self.stop()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            self.touch(event.pos)
-
+            self.touch_instrument_at(event.pos)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 if event.mod & pygame.KMOD_SHIFT:
-                    self.instr.remove_random_ants(1)
+                    self.remove_random_ants(1)
                 else:
-                    self.instr.add_random_ants(1)
+                    self.add_random_ants(1)
             elif event.key == pygame.K_r:
                 self.toggle_mic()
             elif event.key == pygame.K_c:
-                self.instr.ants = []
+                self.ants = []
             elif event.key == pygame.K_SLASH:
                 self.reload_config()
             elif event.key == pygame.K_z:
@@ -200,10 +189,12 @@ class Game:
                 else:
                     self.set_zoom(self.zoom + 1)
             elif event.key == pygame.K_m:
-                self.toggle_mute()
+                self.instr.toggle_mute()
             elif event.key == pygame.K_PERIOD and event.mod & pygame.KMOD_SHIFT:
-                C.cycle_time /= 2
-                print('cycle time', C.cycle_time)
+                C.ant_cycle_time /= 2
+                C.instr.update_cycle_time /= 2
+                print('cycle time', C.ant_cycle_time, C.instr.update_cycle_time)
             elif event.key == pygame.K_COMMA and event.mod & pygame.KMOD_SHIFT:
-                C.cycle_time *= 2
-                print('cycle time', C.cycle_time)
+                C.ant_cycle_time *= 2
+                C.instr.update_cycle_time *= 2
+                print('cycle time', C.ant_cycle_time, C.instr.update_cycle_time)
