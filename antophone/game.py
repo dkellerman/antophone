@@ -21,7 +21,6 @@ class Game:
         pygame.init()
         pygame.display.set_caption('Antophone')
         self.render_surface()
-        self.add_random_ants(C.initial_ant_count)
 
         # instrument thread
         self.instr_thread = threading.Thread(target=self.instr.run)
@@ -47,6 +46,7 @@ class Game:
             self.render()
             pygame.display.update()
             self.clock.tick(C.frame_rate)
+
         self.quit()
 
     def stop(self):
@@ -73,14 +73,10 @@ class Game:
 
     def update_ants(self):
         for ant in self.ants:
-            ant.move(update_instr=False)
-        for ant in self.ants:
-            ant.update_instr()
+            ant.update()
 
     def render(self):
         sqw, sqh = self.square_size
-        self.surface.fill(C.instr.bg_color)
-        pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
 
         grid = self.instr.get_grid_colors()
         for y, row in enumerate(grid):
@@ -93,7 +89,7 @@ class Game:
         for ant in self.ants:
             ax = (ant.x * sqw) + (sqw / 2) - (ant.img.get_width() / 2)
             ay = (ant.y * sqh) + (sqh / 2) - (ant.img.get_height() / 2)
-            self.surface.blit(Ant.img, (ax, ay))
+            self.surface.blit(ant.img, (ax, ay))
 
     def remove_random_ants(self, n):
         for _ in range(min(len(self.ants), n)):
@@ -139,7 +135,8 @@ class Game:
         vols.resize(self.instr.volumes.shape)
         self.instr.volumes = vols
         self.instr.mute = mute
-        self.instr._freq_to_color.cache_clear()
+        self.instr.freq_to_color.cache_clear()
+        self.instr.freq_at.cache_clear()
         self.instr_thread = threading.Thread(target=self.instr.run)
         self.instr_thread.start()
 
@@ -159,6 +156,8 @@ class Game:
     def render_surface(self):
         sqw, sqh = self.square_size
         self.surface = pygame.display.set_mode((self.instr.width * sqw, self.instr.height * sqh))
+        self.surface.fill(C.instr.bg_color)
+        pygame.display.set_caption('Antophone' + (' [Recording]' if mic.running else ''))
         return self.surface
 
     @property
@@ -179,6 +178,7 @@ class Game:
                     self.add_random_ants(1)
             elif event.key == pygame.K_r:
                 self.toggle_mic()
+                self.render_surface()
             elif event.key == pygame.K_c:
                 self.ants = []
             elif event.key == pygame.K_SLASH:
