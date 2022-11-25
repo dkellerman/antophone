@@ -132,7 +132,7 @@ class Instrument:
         self.last_dissonance = self.dissonance
         self.dissonance = self.get_dissonance()
 
-    def get_dissonance(self):        
+    def get_dissonance(self):
         if len(self.audible_freqs):
             freqs, amps = harmonic_tone(self.audible_freqs, n_partials=C.partials)
             return dissonance(freqs, amps, model='sethares1993')

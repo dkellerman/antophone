@@ -16,7 +16,7 @@ class Config:
         update_cycle_time = 0.05
         decay_rate = .3
         threshold = 1.0
-        resonances = ((1,), (1,)) # ((-2, -1, 1, 2), (-2, -1, 1, 2))
+        resonances = ((1,), (1,))  # ((-2, -1, 1, 2), (-2, -1, 1, 2))
         resonance_decay_factor = (3.0, 3.0)
         color_saturation = .6
         bg_color = (10, 10, 10)

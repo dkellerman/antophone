@@ -2,7 +2,8 @@ import pygame
 import numpy as np
 import random
 import time
-from antophone.ant2 import Ant
+from antophone.farm.ant import Ant
+
 
 class Farm:
     def __init__(self):
@@ -45,9 +46,8 @@ class Farm:
 
     def quit(self):
         self.running = False
-    
 
-    
+
 class Board:
     def __init__(self, width, height):
         self.width, self.height = width, height
@@ -88,7 +88,7 @@ class Board:
 
     def place_food(self):
         self.food = (random.randint(0, self.width - 1), random.randint(0, self.height - 1))
-        
+
     def update(self, ant):
         if ant.loc == self.food:
             self.place_food()

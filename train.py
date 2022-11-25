@@ -2,7 +2,7 @@
 
 import sys
 import traceback
-from antophone import Farm
+from antophone.farm import Farm
 
 if __name__ == '__main__':
     farm = Farm()

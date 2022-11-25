@@ -90,4 +90,3 @@ class Ant:
     def get_current_reward(self):
         return self.instr.volumes[self.y][self.x]
         # return max(0, (20.0 - (self.instr.dissonance)))
-        
