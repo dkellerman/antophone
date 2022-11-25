@@ -76,9 +76,9 @@ class Instrument:
             dfy = impact / (rdecay_y**abs(dy))
             xnext = x + dx
             ynext = y + dy
-            if xnext < self.width - 1 and xnext > 0:
+            if xnext < self.width and xnext >= 0:
                 self.volumes[y][xnext] += dfx
-            if ynext < self.height - 1 and ynext > 0:
+            if ynext < self.height and ynext >= 0:
                 self.volumes[ynext][x] += dfy
 
         self.update_sounds()
@@ -125,15 +125,14 @@ class Instrument:
         for sound in self.sound_objs:
             vol = float(new_freq_vols[sound.freq])
             vol = vol if freq <= C.freq_cap else 0.0
-            sound.mul = vol
+            sound.mul = min(max(vol, 0.0), 1.0)
 
         self.audible_freqs = np.array(list(audible_freqs))
         self.freq_vols = new_freq_vols
         self.last_dissonance = self.dissonance
         self.dissonance = self.get_dissonance()
-        print(self.dissonance)
 
-    def get_dissonance(self):
+    def get_dissonance(self):        
         if len(self.audible_freqs):
             freqs, amps = harmonic_tone(self.audible_freqs, n_partials=C.partials)
             return dissonance(freqs, amps, model='sethares1993')
@@ -157,7 +156,7 @@ class Instrument:
             return C.bg_color
         return [min(255, int(val * 255)) for val in hls_to_rgb(
             freq / self.max_freq,
-            vol * 100,
+            vol,
             C.color_saturation,
         )]
 

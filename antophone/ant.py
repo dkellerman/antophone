@@ -15,6 +15,7 @@ class Ant:
         self.instr = instr
         self.steps = 0
         self.last_action = None
+        self.training = False
         self.set_loc(x, y)
 
     def set_loc(self, x, y):
@@ -32,7 +33,8 @@ class Ant:
             (self.y + a[1] < (self.instr.height))
         ]
 
-        antsiness = C.base_antsiness + (self.instr.dissonance / 1000.0)
+        antsiness = .999 ** self.steps if self.training else 0
+        # C.base_antsiness + (self.instr.dissonance / 1000.0)
 
         if random.random() < antsiness:
             action = random.choice(legal_actions)
@@ -51,17 +53,18 @@ class Ant:
 
         # update rewards table
         reward = self.get_current_reward()
-        print('\t', reward)
         self.update_rewards(state, action, reward)
 
         self.last_action = action
         self.steps += 1
 
     def update_instr(self):
-        impact = C.weight
-        if self.last_action == (0, 0):
-            impact *= C.weight_decay
+        if self.last_action == (0, 0) and (getattr(self, 'last_impact', None) is not None):
+            impact = self.last_impact * (1 - C.weight_decay)
+        else:
+            impact = C.weight
         self.instr.touch(self.x, self.y, impact)
+        self.last_impact = impact
 
     def get_state(self):
         state = []
@@ -85,4 +88,6 @@ class Ant:
         return self.G[sa]
 
     def get_current_reward(self):
-        return max(0, (20.0 - (self.instr.dissonance))) # + self.instr.volumes[self.y][self.x]
+        return self.instr.volumes[self.y][self.x]
+        # return max(0, (20.0 - (self.instr.dissonance)))
+        

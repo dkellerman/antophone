@@ -16,6 +16,7 @@ class Game:
     instr = Instrument()
     ants = []
     zoom = 1
+    training = False
 
     def run(self):
         pygame.init()
@@ -76,6 +77,8 @@ class Game:
             ant.update()
 
     def render(self):
+        if self.training:
+            return
         sqw, sqh = self.square_size
 
         grid = self.instr.get_grid_colors()
@@ -165,6 +168,23 @@ class Game:
         sqw, sqh = C.base_square_size
         return sqw * self.zoom, sqh * self.zoom
 
+    def train(self):
+        self.training = True
+        self.instr.toggle_mute()
+        ants = []
+        x, y = random.randint(0, self.instr.width - 1), random.randint(0, self.instr.height - 1)
+        a = Ant(self.instr, x, y)
+        a.training = True
+        ants.append(a)
+        print('training...')
+        from tqdm import tqdm
+        for _ in tqdm(range(10000)):
+            for ant in ants:
+                ant.update()
+        self.instr.toggle_mute()
+        self.training = False
+        print('done')
+
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self.stop()
@@ -181,6 +201,8 @@ class Game:
                 self.render_surface()
             elif event.key == pygame.K_c:
                 self.ants = []
+            elif event.key == pygame.K_t:
+                threading.Thread(target=self.train).start()
             elif event.key == pygame.K_SLASH:
                 self.reload_config()
             elif event.key == pygame.K_z:

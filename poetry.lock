@@ -109,7 +109,7 @@ unicode_backport = ["unicodedata2"]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 
@@ -613,6 +613,23 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "tqdm"
+version = "4.64.1"
+description = "Fast, Extensible Progress Meter"
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7"
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["py-make (>=0.1.0)", "twine", "wheel"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
+
+[[package]]
 name = "traitlets"
 version = "5.5.0"
 description = ""
@@ -648,7 +665,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "e0fc977195275cea0490637df59052e572ea5d85a35e446805739af0d1a8aa7d"
+content-hash = "bce517d1eae432cfbc30c94f13f76b70ada24d9e0bf5c5cb61397349528ae1f0"
 
 [metadata.files]
 altgraph = []
@@ -704,6 +721,7 @@ soundfile = []
 stack-data = []
 threadpoolctl = []
 tomli = []
+tqdm = []
 traitlets = []
 urllib3 = []
 wcwidth = []
