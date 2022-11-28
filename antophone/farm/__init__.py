@@ -7,21 +7,28 @@ from antophone.farm.ant import Ant
 
 class Farm:
     def __init__(self):
+        self.env = CliffsEnv()
+        self.is_user_session = False
         pygame.init()
 
     def train(self, episode_ct=10000, ant_ct=1):
-        self.env = CliffsEnv()
-        self.ants = self.make_ants(ant_ct)
+        self.ants = self.make_ants(ant_ct)        
         self.running = True
-
-        print('training...')
+        Ant.no_random = False
         for _ in tqdm(range(episode_ct)):
             self.run_episode()
 
-        print('demoing...')
+    def run_user_session(self):
+        self.ants = self.make_ants(1) 
+        self.env.reset()
+        self.env.render()
         Ant.no_random = True
-        for _ in tqdm(range(100)):
-            self.run_episode(render=True, delay=.5)
+        self.is_user_session = True
+        self.running = True
+        while self.running:
+            for event in pygame.event.get():
+                self.handle_event(event)
+        self.is_user_session = False
 
     def run_episode(self, delay=0, render=False):
         self.env.reset()
@@ -46,6 +53,17 @@ class Farm:
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self.quit()
+        elif self.is_user_session:
+            ant = self.ants[0]
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_PERIOD and not self.env.is_done:
+                    ant.update()
+                    self.env.render()
+                elif event.key == pygame.K_n:
+                    self.env.reset()
+                    self.env.render()
+                elif not self.env.is_done:
+                    self.env.handle_key(event)
 
     def quit(self):
         self.running = False

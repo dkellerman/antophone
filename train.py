@@ -8,6 +8,7 @@ if __name__ == '__main__':
     farm = Farm()
     try:
         farm.train()
+        farm.run_user_session()
     except Exception as ex:
         print(''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__)))
     finally:
