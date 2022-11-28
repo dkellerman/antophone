@@ -1,5 +1,5 @@
 import os
-from antophone import layouts
+from antophone.phone import layouts
 
 
 class Config:

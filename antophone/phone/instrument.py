@@ -6,7 +6,7 @@ from colorsys import hls_to_rgb
 from librosa import note_to_hz as hz
 from dissonant import harmonic_tone, dissonance
 from antophone import utils
-from antophone.config import Config
+from antophone.phone.config import Config
 
 C = Config.instr
 

@@ -2,6 +2,7 @@ import threading
 import time
 import datetime
 import math
+import numpy as np
 
 
 def ts():
@@ -11,6 +12,13 @@ def ts():
 def diff_cents(f1, f2):
     return 1200 * math.log2(f1 / f2)
 
+
+def softmax(x):
+    return(np.exp(x - np.max(x)) / np.exp(x - np.max(x)).sum())
+
+
+class PygameShell:
+    pass
 
 class TimedCycleThread():
     running = False

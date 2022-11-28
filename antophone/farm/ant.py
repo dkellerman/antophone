@@ -1,48 +1,51 @@
 import numpy as np
+import os
 import pygame
 import random
-from antophone.config import Config
-
-C = Config.ant
 
 
 class Ant:
-    img = pygame.image.load(C.img)
+    img = pygame.image.load(os.path.join(os.path.dirname(__file__), '../../images/ant.png'))
     size = (img.get_width(), img.get_height())
-    actions = (
-        (0, 0), (0, 1), (0, -1), (1, 0), (-1, 0),
-        (1, 1), (1, -1), (-1, 1), (-1, -1),
-    )
-    G = dict()
+    Q = dict()
+    learning_rate = .5
+    discount_rate = .9
+    no_random = False
 
-    def __init__(self, env, loc):
+    def __init__(self, env):
         self.env = env
-        self.loc = loc
-        self.steps = 0
-        self.history = []
 
     def update(self):
-        legal_actions = self.env.get_legal_actions(self)
-        action = random.choice(legal_actions)
-        dx, dy = action
-        self.loc = (self.loc[0] + dx, self.loc[1] + dy)
-        self.steps += 1
-        self.env.update(self)
+        state = self.env.get_state()
+        action = self.get_action(state)
+        qval = self.get_qval(state, action)
 
-        # state = self.env.get_state()
-        # legal_actions = self.env.get_legal_actions(self)
-        # antsiness = .99 ** self.steps
+        next_state, reward, done = self.env.step(action)
+        if done:
+            return done
 
-        # if random.random() < antsiness:
-        #     action = random.choice(legal_actions)
-        # else:
-        #     random.shuffle(legal_actions)
-        #     action_scores = np.array([reward for _, reward in legal_actions])
-        #     action, reward = legal_actions[np.argmax(action_scores)]
+        next_action = self.get_action(next_state)
+        next_qval = self.get_qval(next_state, next_action)
+        discount = 1 - (self.discount_rate ** self.env.turn)
 
-        # self.loc = action(self)
-        # expected_reward = self.get_expected_reward(state, action)
-        # self.G[(state, action)] += (C.learning_rate * (reward - expected_reward))
+        self.Q[(state, action)] = qval + (self.learning_rate * (
+            reward + ((discount * next_qval) - qval)
+        ))
 
-        # # self.history.append(action)
-        # self.steps += 1
+        return done
+
+    def get_action(self, state):
+        legal_actions = self.env.get_legal_actions()
+        antsiness = 0 if self.no_random else .5
+
+        if random.random() < antsiness:
+            action = random.choice(legal_actions)
+        else:
+            action_scores = [self.Q.get((state, a), 0) for a in legal_actions]
+            choice = max(action_scores)
+            action = legal_actions[action_scores.index(choice)]
+
+        return action
+
+    def get_qval(self, state, action):
+        return self.Q.get((state, action), 0)

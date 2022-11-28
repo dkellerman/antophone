@@ -1,7 +1,7 @@
 import numpy as np
 import pygame
 import random
-from antophone.config import Config
+from antophone.phone.config import Config
 
 C = Config.ant
 
