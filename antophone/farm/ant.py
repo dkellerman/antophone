@@ -16,7 +16,7 @@ class Ant:
         self.env = env
 
     def update(self):
-        state = self.env.get_state()
+        state = self.env.state
         action = self.get_action(state)
         qval = self.get_qval(state, action)
 
@@ -35,15 +35,14 @@ class Ant:
         return done
 
     def get_action(self, state):
-        legal_actions = self.env.get_legal_actions()
+        actions = self.env.action_space
         antsiness = 0 if self.no_random else .5
 
         if random.random() < antsiness:
-            action = random.choice(legal_actions)
+            action = random.choice(actions)
         else:
-            action_scores = [self.Q.get((state, a), 0) for a in legal_actions]
-            choice = max(action_scores)
-            action = legal_actions[action_scores.index(choice)]
+            scores = [self.get_qval(state, a) for a in actions]
+            action = actions[scores.index(max(scores))]
 
         return action
 

@@ -9,11 +9,11 @@ class Farm:
     def __init__(self):
         self.env = CliffsEnv()
         self.is_user_session = False
+        self.running = True
         pygame.init()
 
     def train(self, episode_ct=10000, ant_ct=1):
         self.ants = self.make_ants(ant_ct)
-        self.running = True
         Ant.no_random = False
         for _ in tqdm(range(episode_ct)):
             self.run_episode()
@@ -24,7 +24,6 @@ class Farm:
         self.env.render()
         Ant.no_random = True
         self.is_user_session = True
-        self.running = True
         while self.running:
             for event in pygame.event.get():
                 self.handle_event(event)
@@ -56,13 +55,13 @@ class Farm:
         elif self.is_user_session:
             ant = self.ants[0]
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_PERIOD and not self.env.is_done:
+                if event.key == pygame.K_PERIOD and not self.env.done:
                     ant.update()
                     self.env.render()
                 elif event.key == pygame.K_n:
                     self.env.reset()
                     self.env.render()
-                elif not self.env.is_done:
+                elif not self.env.done:
                     self.env.handle_key(event)
 
     def quit(self):
