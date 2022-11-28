@@ -21,6 +21,7 @@ class CliffsEnv:
         self.goal = (11, 3)
         self.cliffs = [(i, 3) for i in range(1, 11)]
         self.turn = 0
+        self.last_step = None
 
     def get_state(self):
         state = []
@@ -58,8 +59,10 @@ class CliffsEnv:
         self.agent = (x + dx, y + dy)
         reward = self.get_reward()
         self.turn += 1
-        return self.get_state(), reward, self.is_done
-    
+        val = self.get_state(), reward, self.is_done
+        self.last_step = (action, *val)
+        return val
+
     @property
     def is_done(self):
         return self.agent in (self.goal, *self.cliffs) or self.turn > 100
@@ -105,5 +108,6 @@ class CliffsEnv:
         elif event.key == pygame.K_LEFT:
             val = self.step('left') if 'left' in moves else None
         if val:
-            print(self.agent, val[1], val[2])
+            q = Ant.Q.get((self.last_step[1], self.last_step[0]), 0)
+            print(self.turn, self.agent, val[1], val[2], q)
             self.render()

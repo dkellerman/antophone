@@ -12,14 +12,14 @@ class Farm:
         pygame.init()
 
     def train(self, episode_ct=10000, ant_ct=1):
-        self.ants = self.make_ants(ant_ct)        
+        self.ants = self.make_ants(ant_ct)
         self.running = True
         Ant.no_random = False
         for _ in tqdm(range(episode_ct)):
             self.run_episode()
 
     def run_user_session(self):
-        self.ants = self.make_ants(1) 
+        self.ants = self.make_ants(1)
         self.env.reset()
         self.env.render()
         Ant.no_random = True
