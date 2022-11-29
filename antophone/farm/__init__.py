@@ -4,14 +4,21 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from antophone.utils import rolling_avg
-from antophone.farm.cliffs import CliffsEnv
+from antophone.farm.cliffs import CliffsEnv, SimpleCliffsEnv
 from antophone.farm.ant import Ant
+
+Envs = {
+    'simple_cliffs': SimpleCliffsEnv,
+    'cliffs': CliffsEnv,
+}
 
 
 class Farm:
-    def __init__(self):
+    def __init__(self, env_type='simple_cliffs'):
         pygame.init()
-        self.env = CliffsEnv((5, 5))
+        Env = Envs[env_type]
+        print(Env)
+        self.env = Env((5, 5))
         self.is_user_session = False
         self.running = True
 

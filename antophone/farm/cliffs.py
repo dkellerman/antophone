@@ -32,7 +32,7 @@ class CliffsEnv:
             for y in range(0, h):
                 sq = (x, y)
                 if (sq != self.agent) and (sq != self.goal) and (sq not in around_agent) \
-                   and (sq not in around_goal):
+                        and (sq not in around_goal):
                     if random.random() < .05:
                         self.cliffs.append(sq)
                     elif random.random() < .1:
@@ -156,3 +156,14 @@ class CliffsEnv:
             q = Ant.Q.get((self.last_step[1], self.last_step[0]), 0)
             print('\n', self.turn, self.agent, val[1], val[2], q)
             print(actions)
+
+
+class SimpleCliffsEnv(CliffsEnv):
+    def reset(self):
+        self.size = (10, 4)
+        super().reset()
+        w, h = self.size
+        self.agent = (0, h - 1)
+        self.goal = (w - 1, h - 1)
+        self.cliffs = [(x, h - 1) for x in range(1, w - 1)]
+        self.walls = []

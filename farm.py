@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
 import sys
+import argparse
 import traceback
 from antophone.farm import Farm
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-g', '--game', type=str, default="cliffs", help="Game type")
+args = parser.parse_args()
+
 if __name__ == '__main__':
-    farm = Farm()
+    farm = Farm(env_type=args.game)
     try:
         farm.run_user_session()
     except Exception as ex:
