@@ -2,14 +2,14 @@
 
 import sys
 import traceback
-from antophone import Game
+from antophone.phone import Antophone
 
 if __name__ == '__main__':
-    game = Game()
+    a = Antophone()
     try:
-        game.run()
+        a.run()
     except Exception as ex:
         print(''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__)))
     finally:
-        game.quit()
+        a.quit()
         sys.exit(0)

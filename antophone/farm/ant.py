@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import pygame
 import random
@@ -9,7 +8,8 @@ class Ant:
     size = (img.get_width(), img.get_height())
     Q = dict()
     learning_rate = .5
-    discount_rate = .9
+    discount_rate = .99
+    antsiness = 0.1
     no_random = False
 
     def __init__(self, env):
@@ -17,28 +17,23 @@ class Ant:
 
     def update(self):
         state = self.env.state
-        action = self.get_action(state)
+        action = self.get_policy_action(state)
         qval = self.get_qval(state, action)
 
-        next_state, reward, done = self.env.step(action)
-        if done:
-            return done
-
-        next_action = self.get_action(next_state)
-        next_qval = self.get_qval(next_state, next_action)
-        discount = 1 - (self.discount_rate ** self.env.turn)
+        observation, reward, done = self.env.step(action)
+        next_action = self.get_policy_action(observation, antsy=False)
+        next_qval = self.get_qval(observation, next_action)
+        discount = self.discount_rate ** self.env.turn
 
         self.Q[(state, action)] = qval + (self.learning_rate * (
             reward + ((discount * next_qval) - qval)
         ))
 
-        return done
+        return done, reward
 
-    def get_action(self, state):
+    def get_policy_action(self, state, antsy=True):
         actions = self.env.action_space
-        antsiness = 0 if self.no_random else .5
-
-        if random.random() < antsiness:
+        if antsy and (not self.no_random) and (random.random() <= self.antsiness):
             action = random.choice(actions)
         else:
             scores = [self.get_qval(state, a) for a in actions]
@@ -46,5 +41,6 @@ class Ant:
 
         return action
 
-    def get_qval(self, state, action):
-        return self.Q.get((state, action), 0)
+    @classmethod
+    def get_qval(cls, state, action):
+        return cls.Q.get((state, action), 0)

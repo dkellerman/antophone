@@ -1,22 +1,27 @@
 import pygame
 from tqdm import tqdm
+import numpy as np
 import time
+import matplotlib.pyplot as plt
+from antophone.utils import rolling_avg
 from antophone.farm.cliffs import CliffsEnv
 from antophone.farm.ant import Ant
 
 
 class Farm:
     def __init__(self):
-        self.env = CliffsEnv()
+        pygame.init()
+        self.env = CliffsEnv((5, 5))
         self.is_user_session = False
         self.running = True
-        pygame.init()
 
-    def train(self, episode_ct=10000, ant_ct=1):
+    def train(self, episode_ct=100000, ant_ct=1):
         self.ants = self.make_ants(ant_ct)
         Ant.no_random = False
+        self.rewards = []
         for _ in tqdm(range(episode_ct)):
-            self.run_episode()
+            rtotal = self.run_episode()
+            self.rewards.append(rtotal)
 
     def run_user_session(self):
         self.ants = self.make_ants(1)
@@ -32,15 +37,19 @@ class Farm:
     def run_episode(self, delay=0, render=False):
         self.env.reset()
         done = [False for _ in self.ants]
+        rtotal = 0
         while self.running and not all(done):
             for event in pygame.event.get():
                 self.handle_event(event)
             for i, ant in enumerate(self.ants):
-                done[i] = ant.update()
+                d, r = ant.update()
+                done[i] = d
+                rtotal += r
                 if render:
                     self.env.render()
             if render and delay:
                 time.sleep(delay)
+        return rtotal
 
     def make_ants(self, n):
         ants = []
@@ -48,6 +57,16 @@ class Farm:
             ant = Ant(self.env)
             ants.append(ant)
         return ants
+
+    def show_training_stats(self):
+        y = np.array(self.rewards)
+        y = np.average(y.reshape(-1, len(y) // 10), axis=1)
+        x = np.arange(len(y)) * 10
+
+        plt.plot(x, y)
+        plt.xlabel('episode')
+        plt.ylabel('rewards')
+        plt.show()
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
@@ -61,6 +80,8 @@ class Farm:
                 elif event.key == pygame.K_n:
                     self.env.reset()
                     self.env.render()
+                elif event.key == pygame.K_s:
+                    self.show_training_stats()
                 elif not self.env.done:
                     self.env.handle_key(event)
 

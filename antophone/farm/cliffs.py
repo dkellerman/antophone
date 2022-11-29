@@ -1,10 +1,11 @@
 import pygame
+import random
+from antophone.utils import draw_border_rect
 from antophone.farm.ant import Ant
 
 
 class CliffsEnv:
-    size = (12, 4)
-    square_size = (48, 48)
+    square_size = (32, 32)
     action_map = {
         'up': (0, -1),
         'down': (0, 1),
@@ -12,13 +13,32 @@ class CliffsEnv:
         'right': (1, 0),
     }
 
-    def __init__(self):
+    def __init__(self, size=(12, 4)):
+        self.size = size
+        self.font = pygame.font.SysFont(None, 24)
         self.reset()
 
     def reset(self):
-        self.agent = (0, 3)
-        self.goal = (11, 3)
-        self.cliffs = [(i, 3) for i in range(1, 11)]
+        w, h = self.size
+        self.agent = (0, 0)
+        self.goal = (w - 1, h - 1)
+        around_agent = [(self.agent[0] + dx, self.agent[1] + dy)
+                        for dx, dy in self.action_map.values()]
+        around_goal = [(self.goal[0] + dx, self.goal[1] + dy)
+                       for dx, dy in self.action_map.values()]
+        self.walls = []
+        self.cliffs = []
+        for x in range(0, w):
+            for y in range(0, h):
+                sq = (x, y)
+                if (sq != self.agent) and (sq != self.goal) and (sq not in around_agent) \
+                   and (sq not in around_goal):
+                    if random.random() < .05:
+                        self.cliffs.append(sq)
+                    elif random.random() < .1:
+                        self.walls.append(sq)
+        self.walls = tuple(self.walls)
+        self.cliffs = tuple(self.cliffs)
         self.turn = 0
         self.last_step = None
 
@@ -32,6 +52,8 @@ class CliffsEnv:
                 if (x, y) == self.goal:
                     row.append(2)
                 elif (x, y) == self.agent:
+                    row.append(3)
+                elif (x, y) in self.walls:
                     row.append(1)
                 elif (x, y) in self.cliffs:
                     row.append(-1)
@@ -44,9 +66,12 @@ class CliffsEnv:
     def action_space(self):
         x, y = self.agent
         w, h = self.size
-        return [k for k, v in self.action_map.items()
-                if 0 <= x + v[0] < w
-                and 0 <= y + v[1] < h]
+        actions = []
+        for k, v in self.action_map.items():
+            nx, ny = x + v[0], y + v[1]
+            if (0 <= nx < w) and (0 <= ny < h) and ((nx, ny) not in self.walls):
+                actions.append(k)
+        return tuple(actions)
 
     @property
     def reward(self):
@@ -68,7 +93,7 @@ class CliffsEnv:
 
     @property
     def done(self):
-        return self.agent in (self.goal, *self.cliffs) or self.turn > 100
+        return self.agent in (self.goal, *self.cliffs) or self.turn > 200
 
     def render(self):
         grid_width, grid_height = self.size
@@ -77,7 +102,7 @@ class CliffsEnv:
         agent_width, agent_height = Ant.size
 
         if not getattr(self, 'initialized', False):
-            pygame.display.set_caption('Ant Farm: Cliffs')
+            pygame.display.set_caption('Ant Farm - Cliffs')
             board_size = (grid_width * sq_width, grid_height * sq_height)
             self.surface = pygame.display.set_mode(board_size)
             self.surface.fill((0, 0, 0))
@@ -88,14 +113,19 @@ class CliffsEnv:
             for x in range(grid_width):
                 x1, y1 = x * sq_width, y * sq_height
                 x2, y2 = x1 + sq_width, y1 + sq_height
+                square = pygame.Rect(x1, y1, x2, y2)
+
                 if (x, y) == self.goal:
                     color = (0, 255, 0)
                 elif (x, y) in self.cliffs:
                     color = (255, 0, 0)
+                elif (x, y) in self.walls:
+                    color = (100, 100, 100)
                 else:
                     color = (0, 0, 0) if not self.done else (128, 128, 128)
 
-                pygame.draw.rect(self.surface, color, pygame.Rect(x1, y1, x2, y2))
+                draw_border_rect(self.surface, color, (60, 60, 60), square, border=1)
+
                 ax = (self.agent[0] * sq_width) + (sq_width / 2) - (agent_width / 2)
                 ay = (self.agent[1] * sq_height) + (sq_height / 2) - (agent_height / 2)
                 self.surface.blit(agent_img, (ax, ay))
@@ -105,18 +135,24 @@ class CliffsEnv:
 
     def handle_key(self, event):
         val = None
-        moves = self.action_space
+        actions = self.action_space
 
         if event.key == pygame.K_UP:
-            val = self.step('up') if 'up' in moves else None
+            val = self.step('up') if 'up' in actions else None
         elif event.key == pygame.K_DOWN:
-            val = self.step('down') if 'down' in moves else None
+            val = self.step('down') if 'down' in actions else None
         elif event.key == pygame.K_RIGHT:
-            val = self.step('right') if 'right' in moves else None
+            val = self.step('right') if 'right' in actions else None
         elif event.key == pygame.K_LEFT:
-            val = self.step('left') if 'left' in moves else None
+            val = self.step('left') if 'left' in actions else None
 
         if val:
-            q = Ant.Q.get((self.last_step[1], self.last_step[0]), 0)
-            print(self.turn, self.agent, val[1], val[2], q)
             self.render()
+
+            # log action values from current state
+            actions = dict()
+            for a in self.action_space:
+                actions[a] = Ant.get_qval(self.state, a)
+            q = Ant.Q.get((self.last_step[1], self.last_step[0]), 0)
+            print('\n', self.turn, self.agent, val[1], val[2], q)
+            print(actions)

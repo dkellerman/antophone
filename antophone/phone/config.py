@@ -27,7 +27,7 @@ class Config:
         partials = 2
 
     class ant:
-        img = os.path.join(os.path.dirname(__file__), '../images/ant.png')
+        img = os.path.join(os.path.dirname(__file__), '../../images/ant.png')
         weight = 0.05
         weight_decay = .01
         learning_rate = .5
