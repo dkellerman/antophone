@@ -5,6 +5,7 @@ from antophone.farm.ant import Ant
 
 
 class CliffsEnv:
+    title = 'Ant Farm - Cliffs'
     square_size = (32, 32)
     action_map = {
         'up': (0, -1),
@@ -102,7 +103,7 @@ class CliffsEnv:
         agent_width, agent_height = Ant.size
 
         if not getattr(self, 'initialized', False):
-            pygame.display.set_caption('Ant Farm - Cliffs')
+            pygame.display.set_caption(self.title)
             board_size = (grid_width * sq_width, grid_height * sq_height)
             self.surface = pygame.display.set_mode(board_size)
             self.surface.fill((0, 0, 0))
@@ -159,6 +160,8 @@ class CliffsEnv:
 
 
 class SimpleCliffsEnv(CliffsEnv):
+    title = 'Ant Farm - Simple Cliffs'
+
     def reset(self):
         self.size = (10, 4)
         super().reset()

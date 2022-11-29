@@ -3,7 +3,6 @@ from tqdm import tqdm
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from antophone.utils import rolling_avg
 from antophone.farm.cliffs import CliffsEnv, SimpleCliffsEnv
 from antophone.farm.ant import Ant
 
@@ -17,10 +16,9 @@ class Farm:
     def __init__(self, env_type='simple_cliffs'):
         pygame.init()
         Env = Envs[env_type]
-        print(Env)
-        self.env = Env((5, 5))
+        self.env_type = env_type
+        self.env = Env()
         self.is_user_session = False
-        self.running = True
 
     def train(self, episode_ct=100000, ant_ct=1):
         self.ants = self.make_ants(ant_ct)
@@ -36,10 +34,13 @@ class Farm:
         self.env.render()
         Ant.no_random = True
         self.is_user_session = True
+        self.running = True
         while self.running:
             for event in pygame.event.get():
                 self.handle_event(event)
         self.is_user_session = False
+        if getattr(self, 'on_stop', None):
+            self.on_stop()
 
     def run_episode(self, delay=0, render=False):
         self.env.reset()
@@ -84,6 +85,14 @@ class Farm:
                 if event.key == pygame.K_PERIOD and not self.env.done:
                     ant.update()
                     self.env.render()
+                elif event.key == pygame.K_g:
+                    envs = [e for e in Envs.keys()]
+                    i = envs.index(self.env_type)
+                    next_env = envs[(i + 1) % len(envs)]
+                    self.env_type = next_env
+                    self.env = Envs[next_env]()
+                    self.running = False
+                    self.on_stop = self.relaunch
                 elif event.key == pygame.K_n:
                     self.env.reset()
                     self.env.render()
@@ -94,3 +103,7 @@ class Farm:
 
     def quit(self):
         self.running = False
+
+    def relaunch(self):
+        del self.on_stop
+        self.run_user_session()
