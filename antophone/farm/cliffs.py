@@ -51,13 +51,14 @@ class CliffsEnv:
         for y in range(h):
             row = []
             for x in range(w):
-                if (x, y) == self.goal:
+                sq = (x, y)
+                if sq == self.goal:
                     row.append(2)
-                elif (x, y) == self.agent:
+                elif sq == self.agent:
                     row.append(3)
-                elif (x, y) in self.walls:
+                elif sq in self.walls:
                     row.append(1)
-                elif (x, y) in self.cliffs:
+                elif sq in self.cliffs:
                     row.append(-1)
                 else:
                     row.append(0)

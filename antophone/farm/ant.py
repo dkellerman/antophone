@@ -48,9 +48,9 @@ class Ant:
             self.log_qvals()
 
         if ((not self.no_random)
-             and (random.random() <= self.antsiness)
-             and (self.env.turn > self.q_delay)
-        ):
+            and (random.random() <= self.antsiness)
+            and (self.env.turn > self.q_delay)
+            ):
             action = random.choice(actions)
         else:
             scores = [self.get_qval(state, a) for a in actions]
