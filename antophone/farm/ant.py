@@ -15,9 +15,9 @@ class Ant:
     learning_rate = .5
     discount_rate = .99
     antsiness = 0.1
-    q_delay = 10
-    no_random = False
+    q_delay = 100
     use_softmax = False
+    no_random = False
     log = False
 
     def __init__(self, env):
@@ -30,7 +30,7 @@ class Ant:
 
         observation, reward, done = self.env.step(action)
         if not done:
-            next_action = self.get_next_action(observation, antsy=False)
+            next_action = self.get_next_action(observation)
             next_qval = self.get_qval(observation, next_action)
         else:
             next_qval = 0
@@ -42,17 +42,16 @@ class Ant:
 
         return done, reward
 
-    def get_next_action(self, state, antsy=True):
+    def get_next_action(self, state):
         actions = self.env.action_space
 
         if self.log and getattr(self.env, 'last_step', None):
             self.log_qvals()
 
-        if (antsy
-            and (not self.no_random)
-            and (random.random() <= self.antsiness)
-            and (self.env.turn > self.q_delay)
-            ):
+        if ((not self.no_random)
+             and (random.random() <= self.antsiness)
+             and (self.env.turn > self.q_delay)
+        ):
             action = random.choice(actions)
         else:
             scores = [self.get_qval(state, a) for a in actions]
