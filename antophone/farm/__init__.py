@@ -4,11 +4,13 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from antophone.farm.cliffs import CliffsEnv, SimpleCliffsEnv
+from antophone.farm.ttt import TTTEnv
 from antophone.farm.ant import Ant
 
 Envs = {
     'simple_cliffs': SimpleCliffsEnv,
     'cliffs': CliffsEnv,
+    'ttt': TTTEnv,
 }
 
 
@@ -22,17 +24,21 @@ class Farm:
 
     def train(self, episode_ct=100000, ant_ct=1):
         self.ants = self.make_ants(ant_ct)
+        self.env.opponent = self.ants[0]
         Ant.no_random = False
         self.rewards = []
+        self.running = True
         for _ in tqdm(range(episode_ct)):
             rtotal = self.run_episode()
             self.rewards.append(rtotal)
 
     def run_user_session(self):
         self.ants = self.make_ants(1)
+        self.env.opponent = self.ants[0]
         self.env.reset()
         self.env.render()
         Ant.no_random = True
+        Ant.log = True
         self.is_user_session = True
         self.running = True
         while self.running:
@@ -59,10 +65,10 @@ class Farm:
                 time.sleep(delay)
         return rtotal
 
-    def make_ants(self, n):
+    def make_ants(self, n, **kwargs):
         ants = []
         for _ in range(n):
-            ant = Ant(self.env)
+            ant = Ant(self.env, **kwargs)
             ants.append(ant)
         return ants
 

@@ -1,5 +1,6 @@
 import pygame
 import random
+from functools import cache
 from antophone.utils import draw_border_rect
 from antophone.farm.ant import Ant
 
@@ -83,6 +84,10 @@ class CliffsEnv:
         else:
             return -1
 
+    @property
+    def done(self):
+        return self.agent in (self.goal, *self.cliffs) or self.turn > 200
+
     def step(self, action):
         x, y = self.agent
         dx, dy = self.action_map[action]
@@ -90,11 +95,8 @@ class CliffsEnv:
         self.turn += 1
         val = self.state, self.reward, self.done
         self.last_step = (action, *val)
-        return val
 
-    @property
-    def done(self):
-        return self.agent in (self.goal, *self.cliffs) or self.turn > 200
+        return val
 
     def render(self):
         grid_width, grid_height = self.size
@@ -149,14 +151,6 @@ class CliffsEnv:
 
         if val:
             self.render()
-
-            # log action values from current state
-            actions = dict()
-            for a in self.action_space:
-                actions[a] = Ant.get_qval(self.state, a)
-            q = Ant.Q.get((self.last_step[1], self.last_step[0]), 0)
-            print('\n', self.turn, self.agent, val[1], val[2], q)
-            print(actions)
 
 
 class SimpleCliffsEnv(CliffsEnv):
