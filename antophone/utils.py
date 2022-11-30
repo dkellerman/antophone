@@ -27,6 +27,10 @@ def softmax(x):
     return (np.exp(x - np.max(x)) / np.exp(x - np.max(x)).sum())
 
 
+def rnd_softmax(x):
+    return np.random.choice(x, p=softmax(x))
+
+
 class PygameShell:
     pass
 
