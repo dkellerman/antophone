@@ -13,7 +13,7 @@ class Ant:
 
     # RL config
     learning_rate = .5
-    discount_rate = .99
+    discount_rate = .9
     antsiness = 0.1
     q_delay = 100
     use_softmax = False
@@ -35,9 +35,8 @@ class Ant:
         else:
             next_qval = 0
 
-        discount = self.discount_rate ** self.env.turn
         self.Q[(state, action)] = qval + (self.learning_rate * (
-            reward + ((discount * next_qval) - qval)
+            reward + ((self.discount_rate * next_qval) - qval)
         ))
 
         return done, reward
