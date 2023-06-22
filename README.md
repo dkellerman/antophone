@@ -1,4 +1,9 @@
 # Antophone
+Training RL ants to play a synthesizer. Extremely WIP. Uses python, with pygame window for display.
+
+* `antophone.py` - run instrument - use `a` key to add ants (`A` to remove)
+* `train.py` - train ants
+* `farm.py` - interactive ant farm for debugging RL (`>` to step, `n` for new game)
 
 ## Install (Mac)
 * `brew install portaudio --HEAD`
