@@ -75,11 +75,9 @@ class TTTEnv:
         return val
 
     def opponent_move(self):
-        x, y = None, None
-        if self.opponent:
-            x, y = self.opponent.get_next_action(self.state)
-        else:
-            x, y = random.choice(self.action_space)
+        if not self.opponent:
+            return None, None
+        x, y = self.opponent.get_next_action(self.state)
         self.grid[y][x] = self.player2
         return x, y
 

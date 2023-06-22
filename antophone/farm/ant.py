@@ -13,9 +13,9 @@ class Ant:
 
     # RL config
     learning_rate = .5
-    discount_rate = .9
+    discount_rate = .99
     antsiness = 0.1
-    q_delay = 100
+    q_delay = 10
     use_softmax = False
     no_random = False
     log = False
@@ -73,3 +73,10 @@ class Ant:
         q = self.Q.get((last[1], last[0]), 0)
         print('\n', self.env.turn, self.env.agent, last[2], last[3], q)
         pprint.pprint(vals)
+
+
+class OpponentAnt(Ant):
+    def update(self):
+        return self.env.done, 0
+    def get_next_action(self, state):
+        return random.choice(self.env.action_space)

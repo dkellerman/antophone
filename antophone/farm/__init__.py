@@ -5,12 +5,14 @@ import time
 import matplotlib.pyplot as plt
 from antophone.farm.cliffs import CliffsEnv, SimpleCliffsEnv
 from antophone.farm.ttt import TTTEnv
-from antophone.farm.ant import Ant
+from antophone.farm.snake import SnakeEnv
+from antophone.farm.ant import Ant, OpponentAnt
 
 Envs = {
     'simple_cliffs': SimpleCliffsEnv,
     'cliffs': CliffsEnv,
     'ttt': TTTEnv,
+    'snake': SnakeEnv,
 }
 
 
@@ -22,9 +24,9 @@ class Farm:
         self.env = Env()
         self.is_user_session = False
 
-    def train(self, episode_ct=100000, ant_ct=1):
-        self.ants = self.make_ants(ant_ct)
-        self.env.opponent = self.ants[0]
+    def train(self, episode_ct=100000):
+        self.ants = self.make_ants(1)
+        self.env.opponent = OpponentAnt(self.env)
         Ant.no_random = False
         self.rewards = []
         self.running = True
@@ -34,7 +36,7 @@ class Farm:
 
     def run_user_session(self):
         self.ants = self.make_ants(1)
-        self.env.opponent = self.ants[0]
+        self.env.opponent = None
         self.env.reset()
         self.env.render()
         Ant.no_random = True
